@@ -1,0 +1,20 @@
+export type DiscoverItem = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  latitude: number;
+  longitude: number;
+  isSecret: boolean;
+  unlocked: boolean;
+  wheelchair: boolean;
+  publicTransport: boolean;
+  restroom: boolean;
+  paid: boolean;
+  styleTags: string[];
+  helpfulCount: number;
+  ratingAvg: number | null;
+  ratingCount: number;
+  hero: string | null;
+  distanceMeters: number | null;
+};

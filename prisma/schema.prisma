@@ -1,0 +1,250 @@
+// PhotoLoc Prisma schema
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis]
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  BANNED
+}
+
+enum LocationStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  REJECTED
+  NEEDS_REVISION
+}
+
+enum PhotoKind {
+  INSPIRATION
+  TECHNICAL
+}
+
+enum UpdateKind {
+  BLOOM
+  CONSTRUCTION
+  ACCESS
+  WEATHER
+  EVENT
+  OTHER
+}
+
+enum PointsReason {
+  SUBMIT_LOCATION
+  ADD_PHOTO
+  STATUS_UPDATE
+  HELPFUL_RECEIVED
+  UNLOCK_SECRET
+  ADMIN_ADJUST
+}
+
+model User {
+  id              String     @id @default(cuid())
+  email           String     @unique
+  emailVerified   DateTime?
+  passwordHash    String?
+  fullName        String
+  phone           String?
+  teacherOrSchool String?
+  portfolioUrl    String?
+  role            UserRole   @default(USER)
+  status          UserStatus @default(PENDING)
+  reviewNote      String?
+  points          Int        @default(0)
+  image           String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  submittedLocations Location[]      @relation("SubmittedBy")
+  uploadedPhotos  Photo[]
+  statusUpdates   StatusUpdate[]
+  helpfuls        Helpful[]
+  ratings         Rating[]
+  pointsLedger   PointsLedger[]
+  secretUnlocks  SecretUnlock[]
+
+  @@index([status])
+  @@index([role])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Location {
+  id              String         @id @default(cuid())
+  slug            String         @unique
+  title           String
+  description     String         @db.Text
+  status          LocationStatus @default(PENDING)
+  reviewFeedback  String?        @db.Text
+  awardedPoints   Boolean        @default(false)
+
+  // Coordinates stored as PostGIS geography(Point,4326). Managed via raw SQL.
+  // Latitude/Longitude are kept here as plain columns for convenience and as
+  // the source-of-truth for client-side rendering. The geography column
+  // `coords` is created and kept in sync via raw SQL helpers in lib/geo.ts.
+  latitude        Float
+  longitude       Float
+
+  // Filters
+  wheelchair      Boolean  @default(false)
+  publicTransport Boolean  @default(false)
+  restroom        Boolean  @default(false)
+  changingRoom    Boolean  @default(false)
+  paid            Boolean  @default(false)
+  priceMin        Int?
+  priceMax        Int?
+  styleTags       String[] @default([])
+  isSecret        Boolean  @default(false)
+  unlockCost      Int      @default(100)
+
+  submitterId     String
+  submitter       User     @relation("SubmittedBy", fields: [submitterId], references: [id])
+
+  approvedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  photos          Photo[]
+  statusUpdates   StatusUpdate[]
+  ratings         Rating[]
+  unlocks         SecretUnlock[]
+
+  @@index([status])
+  @@index([submitterId])
+  @@index([latitude, longitude])
+}
+
+model Photo {
+  id                 String     @id @default(cuid())
+  locationId         String
+  location           Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  uploaderId         String
+  uploader           User       @relation(fields: [uploaderId], references: [id])
+  kind               PhotoKind
+  cloudinaryPublicId String
+  width              Int?
+  height             Int?
+  caption            String?
+  helpfulCount       Int        @default(0)
+  createdAt          DateTime   @default(now())
+
+  helpfuls Helpful[]
+
+  @@index([locationId, kind])
+}
+
+model StatusUpdate {
+  id         String     @id @default(cuid())
+  locationId String
+  location   Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User       @relation(fields: [authorId], references: [id])
+  body       String     @db.Text
+  kind       UpdateKind @default(OTHER)
+  verified   Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+
+  @@index([locationId, createdAt])
+}
+
+model Helpful {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photoId   String
+  photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, photoId])
+  @@index([photoId])
+}
+
+model Rating {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  stars      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, locationId])
+  @@index([locationId])
+}
+
+model PointsLedger {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta     Int
+  reason    PointsReason
+  refType   String?
+  refId     String?
+  createdAt DateTime     @default(now())
+
+  @@index([userId])
+  @@index([reason])
+}
+
+model SecretUnlock {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  pointsSpent Int
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, locationId])
+}
