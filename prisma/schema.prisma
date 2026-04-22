@@ -1,4 +1,4 @@
-// PhotoLoc Prisma schema
+// LocatePedia Prisma schema
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
@@ -35,6 +35,12 @@ enum PhotoKind {
   TECHNICAL
 }
 
+enum PhotoStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum UpdateKind {
   BLOOM
   CONSTRUCTION
@@ -53,6 +59,13 @@ enum PointsReason {
   ADMIN_ADJUST
 }
 
+enum FilterCategory {
+  AMENITY
+  PRICE
+  STYLE
+  SPECIAL
+}
+
 model User {
   id              String     @id @default(cuid())
   email           String     @unique
@@ -67,6 +80,7 @@ model User {
   reviewNote      String?
   points          Int        @default(0)
   image           String?
+  locale          String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
@@ -79,6 +93,7 @@ model User {
   ratings         Rating[]
   pointsLedger   PointsLedger[]
   secretUnlocks  SecretUnlock[]
+  favorites      Favorite[]
 
   @@index([status])
   @@index([role])
@@ -135,16 +150,15 @@ model Location {
   latitude        Float
   longitude       Float
 
-  // Filters
-  wheelchair      Boolean  @default(false)
-  publicTransport Boolean  @default(false)
-  restroom        Boolean  @default(false)
-  changingRoom    Boolean  @default(false)
-  paid            Boolean  @default(false)
-  priceMin        Int?
-  priceMax        Int?
-  styleTags       String[] @default([])
-  isSecret        Boolean  @default(false)
+  // Reverse-geocoded administrative info (best-effort, populated by lib/geocoding.ts).
+  city            String?
+  area            String?
+  country         String?
+
+  // Free-form directions written by the submitter (car, transit, walking...).
+  directions      String?  @db.Text
+
+  hidden          Boolean  @default(false)
   unlockCost      Int      @default(100)
 
   submitterId     String
@@ -158,29 +172,62 @@ model Location {
   statusUpdates   StatusUpdate[]
   ratings         Rating[]
   unlocks         SecretUnlock[]
+  favorites       Favorite[]
+  locationFilters LocationFilter[]
 
   @@index([status])
   @@index([submitterId])
   @@index([latitude, longitude])
+  @@index([city])
+  @@index([area])
+}
+
+model FilterDefinition {
+  id              String         @id @default(cuid())
+  slug            String         @unique
+  category        FilterCategory
+  sortOrder       Int            @default(0)
+  createdAt       DateTime       @default(now())
+  locationFilters LocationFilter[]
+}
+
+model LocationFilter {
+  id           String           @id @default(cuid())
+  locationId   String
+  location     Location         @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  filterId     String
+  filter       FilterDefinition @relation(fields: [filterId], references: [id], onDelete: Cascade)
+  boolValue    Boolean          @default(true)
+  numValue     Int?
+  strValue     String?
+  createdAt    DateTime         @default(now())
+
+  @@unique([locationId, filterId])
+  @@index([filterId])
+  @@index([locationId])
 }
 
 model Photo {
-  id                 String     @id @default(cuid())
+  id                 String      @id @default(cuid())
   locationId         String
-  location           Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  location           Location    @relation(fields: [locationId], references: [id], onDelete: Cascade)
   uploaderId         String
-  uploader           User       @relation(fields: [uploaderId], references: [id])
+  uploader           User        @relation(fields: [uploaderId], references: [id])
   kind               PhotoKind
+  status             PhotoStatus @default(APPROVED)
+  reviewNote         String?
   cloudinaryPublicId String
   width              Int?
   height             Int?
   caption            String?
-  helpfulCount       Int        @default(0)
-  createdAt          DateTime   @default(now())
+  helpfulCount       Int         @default(0)
+  createdAt          DateTime    @default(now())
 
   helpfuls Helpful[]
 
   @@index([locationId, kind])
+  @@index([locationId, status])
+  @@index([status])
 }
 
 model StatusUpdate {
@@ -216,6 +263,8 @@ model Rating {
   locationId String
   location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
   stars      Int
+  title      String?
+  body       String?  @db.Text
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -247,4 +296,17 @@ model SecretUnlock {
   createdAt  DateTime @default(now())
 
   @@unique([userId, locationId])
+}
+
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, locationId])
+  @@index([userId])
+  @@index([locationId])
 }

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import imageCompression from "browser-image-compression";
+import { useTranslations } from "next-intl";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -18,7 +19,7 @@ export type UploadedPhoto = {
 export function PhotoUploader({
   value,
   onChange,
-  label = "Add photos",
+  label,
   helperText,
 }: {
   value: UploadedPhoto[];
@@ -29,6 +30,8 @@ export function PhotoUploader({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [busy, setBusy] = React.useState(false);
   const { toast } = useToast();
+  const t = useTranslations("PhotoUploader");
+  const labelText = label ?? t("addPhotos");
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -37,7 +40,7 @@ export function PhotoUploader({
       const sigRes = await fetch("/api/upload/sign", { method: "POST" });
       if (!sigRes.ok) {
         const data = await sigRes.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to get upload signature");
+        throw new Error(data.error || t("uploadFailedDescription"));
       }
       const sig = await sigRes.json();
 
@@ -61,7 +64,7 @@ export function PhotoUploader({
           `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`,
           { method: "POST", body: fd },
         );
-        if (!res.ok) throw new Error("Upload failed");
+        if (!res.ok) throw new Error(t("uploadFailedDescription"));
         const data = await res.json();
         newPhotos.push({
           cloudinaryPublicId: data.public_id,
@@ -73,8 +76,8 @@ export function PhotoUploader({
       onChange([...value, ...newPhotos]);
     } catch (e: any) {
       toast({
-        title: "Upload failed",
-        description: e?.message ?? "Could not upload photo.",
+        title: t("uploadFailed"),
+        description: e?.message ?? t("uploadFailedDescription"),
         variant: "destructive",
       });
     } finally {
@@ -90,7 +93,7 @@ export function PhotoUploader({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">{label}</p>
+        <p className="text-sm font-medium">{labelText}</p>
         <Button
           type="button"
           variant="outline"
@@ -99,11 +102,11 @@ export function PhotoUploader({
           disabled={busy}
         >
           {busy ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="me-2 h-4 w-4 animate-spin" />
           ) : (
-            <ImagePlus className="mr-2 h-4 w-4" />
+            <ImagePlus className="me-2 h-4 w-4" />
           )}
-          {busy ? "Uploading..." : "Choose files"}
+          {busy ? t("uploading") : t("chooseFiles")}
         </Button>
       </div>
       {helperText && (
@@ -126,14 +129,14 @@ export function PhotoUploader({
             >
               <img
                 src={p.previewUrl}
-                alt="Uploaded photo"
+                alt={t("uploadedPhotoAlt")}
                 className="h-full w-full object-cover"
               />
               <button
                 type="button"
                 onClick={() => remove(idx)}
-                className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100 focus:opacity-100"
-                aria-label="Remove photo"
+                className="absolute end-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100 focus:opacity-100"
+                aria-label={t("removePhoto")}
               >
                 <X className="h-3 w-3" />
               </button>

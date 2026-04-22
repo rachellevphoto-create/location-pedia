@@ -1,26 +1,53 @@
 import { render } from "@react-email/components";
 import { Text } from "@react-email/components";
 import * as React from "react";
-import { EmailLayout } from "./_layout";
+import { EmailLayout, type EmailLocale } from "./_layout";
+
+const TEXTS: Record<
+  EmailLocale,
+  {
+    preview: string;
+    greeting: (n: string) => string;
+    body: string;
+    reasonPrefix: (r: string) => string;
+    footer: string;
+  }
+> = {
+  he: {
+    preview: "עדכון לגבי חשבון LocatePedia",
+    greeting: (n) => `שלום ${n},`,
+    body: "לא הצלחנו לאשר את חשבון LocatePedia שלכם בשלב זה.",
+    reasonPrefix: (r) => `סיבה: ${r}`,
+    footer: "אם נראה לכם שזו טעות, השיבו לאימייל הזה והצוות שלנו ייקח עוד מבט.",
+  },
+  en: {
+    preview: "LocatePedia account update",
+    greeting: (n) => `Hi ${n},`,
+    body: "We were unable to approve your LocatePedia account at this time.",
+    reasonPrefix: (r) => `Reason: ${r}`,
+    footer:
+      "If you believe this is a mistake, reply to this email and our team will take another look.",
+  },
+};
 
 export function UserRejectedEmail({
   fullName,
   reason,
+  locale = "he",
 }: {
   fullName: string;
   reason?: string;
+  locale?: EmailLocale;
 }) {
+  const t = TEXTS[locale];
   return (
-    <EmailLayout preview="PhotoLoc account update">
-      <Text style={{ fontSize: 18, fontWeight: 600 }}>Hi {fullName},</Text>
+    <EmailLayout preview={t.preview} locale={locale}>
+      <Text style={{ fontSize: 18, fontWeight: 600 }}>{t.greeting(fullName)}</Text>
       <Text>
-        We were unable to approve your PhotoLoc account at this time.
-        {reason ? ` Reason: ${reason}` : ""}
+        {t.body}
+        {reason ? ` ${t.reasonPrefix(reason)}` : ""}
       </Text>
-      <Text>
-        If you believe this is a mistake, reply to this email and our team will
-        take another look.
-      </Text>
+      <Text>{t.footer}</Text>
     </EmailLayout>
   );
 }
@@ -28,6 +55,11 @@ export function UserRejectedEmail({
 export function renderUserRejectedEmail(props: {
   fullName: string;
   reason?: string;
+  locale?: EmailLocale;
 }) {
   return render(<UserRejectedEmail {...props} />);
+}
+
+export function userRejectedSubject(locale: EmailLocale) {
+  return locale === "he" ? "עדכון לגבי חשבון LocatePedia" : "LocatePedia account update";
 }

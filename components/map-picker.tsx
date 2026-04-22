@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import Map, { Marker, NavigationControl, type MapRef } from "react-map-gl";
+import { useLocale, useTranslations } from "next-intl";
 import { MapPin } from "lucide-react";
+import { applyMapLanguage } from "@/lib/map-language";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
@@ -17,11 +19,16 @@ export function MapPicker({
 }) {
   const mapRef = React.useRef<MapRef | null>(null);
   const initial = value ?? { lat: 32.0853, lng: 34.7818 };
+  const t = useTranslations("Map");
+  const locale = useLocale();
+
+  React.useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (map) applyMapLanguage(map, locale);
+  }, [locale]);
 
   if (!TOKEN) {
-    return (
-      <ManualPicker value={value} onChange={onChange} />
-    );
+    return <ManualPicker value={value} onChange={onChange} />;
   }
 
   return (
@@ -36,6 +43,8 @@ export function MapPicker({
             zoom: 12,
           }}
           mapStyle="mapbox://styles/mapbox/streets-v12"
+          onLoad={(e) => applyMapLanguage(e.target, locale)}
+          onStyleData={(e) => applyMapLanguage(e.target, locale)}
           onClick={(e) => onChange({ lat: e.lngLat.lat, lng: e.lngLat.lng })}
           style={{ width: "100%", height: "100%" }}
         >
@@ -54,12 +63,8 @@ export function MapPicker({
           )}
         </Map>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Click on the map to drop a pin, or drag the existing pin to fine-tune.
-      </p>
-      {value && (
-        <ManualPicker value={value} onChange={onChange} compact />
-      )}
+      <p className="text-xs text-muted-foreground">{t("pickerHelp")}</p>
+      {value && <ManualPicker value={value} onChange={onChange} compact />}
     </div>
   );
 }
@@ -75,6 +80,7 @@ function ManualPicker({
 }) {
   const [lat, setLat] = React.useState(value?.lat?.toString() ?? "");
   const [lng, setLng] = React.useState(value?.lng?.toString() ?? "");
+  const t = useTranslations("Map");
 
   const lat0 = value?.lat;
   const lng0 = value?.lng;
@@ -96,9 +102,7 @@ function ManualPicker({
   return (
     <div className={compact ? "grid grid-cols-2 gap-2" : "space-y-2"}>
       {!compact && (
-        <p className="text-sm text-muted-foreground">
-          Mapbox is not configured. Enter coordinates manually:
-        </p>
+        <p className="text-sm text-muted-foreground">{t("manualHelp")}</p>
       )}
       <input
         type="number"
@@ -106,7 +110,7 @@ function ManualPicker({
         value={lat}
         onChange={(e) => setLat(e.target.value)}
         onBlur={commit}
-        placeholder="Latitude"
+        placeholder={t("latitudePlaceholder")}
         className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
       />
       <input
@@ -115,7 +119,7 @@ function ManualPicker({
         value={lng}
         onChange={(e) => setLng(e.target.value)}
         onBlur={commit}
-        placeholder="Longitude"
+        placeholder={t("longitudePlaceholder")}
         className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
       />
     </div>

@@ -23,9 +23,9 @@ export async function locationDistanceMeters(
 }
 
 export type DiscoverFilters = {
-  wheelchair?: boolean;
-  publicTransport?: boolean;
-  restroom?: boolean;
+  /** Boolean filter slugs that must be present (e.g. wheelchair, publicTransport, drone) */
+  boolFilters?: string[];
+  /** Tri-state paid filter: true = paid, false = free, null/undefined = any */
   paid?: boolean | null;
   styleTags?: string[];
   priceMin?: number | null;
@@ -34,6 +34,9 @@ export type DiscoverFilters = {
   bbox?: BBox | null;
   from?: LatLng | null;
   limit?: number;
+  ratingMin?: number | null;
+  favoritesOnly?: boolean;
+  userId?: string | null;
 };
 
 export type DiscoverRow = {
@@ -43,18 +46,33 @@ export type DiscoverRow = {
   description: string;
   latitude: number;
   longitude: number;
-  wheelchair: boolean;
-  publicTransport: boolean;
-  restroom: boolean;
-  paid: boolean;
-  isSecret: boolean;
-  styleTags: string[];
   helpfulCount: number;
   ratingAvg: number | null;
   ratingCount: number;
   hero: string | null;
   distance_m: number | null;
+  filter_slugs: string[];
+  filter_nums: string | null;
 };
+
+/** Parsed filter map built from DiscoverRow raw data */
+export type LocationFilterMap = Record<string, boolean | number>;
+
+export function parseFilterRow(row: DiscoverRow): LocationFilterMap {
+  const map: LocationFilterMap = {};
+  for (const slug of row.filter_slugs ?? []) {
+    map[slug] = true;
+  }
+  if (row.filter_nums) {
+    try {
+      const nums = JSON.parse(row.filter_nums) as Record<string, number>;
+      for (const [k, v] of Object.entries(nums)) {
+        map[k] = v;
+      }
+    } catch {}
+  }
+  return map;
+}
 
 /**
  * Spatial+filter query for the discover page. Returns published locations.
@@ -68,28 +86,91 @@ export async function searchLocations(
   const fromLng = filters.from?.lng ?? null;
   const fromLat = filters.from?.lat ?? null;
 
-  const wheres: Prisma.Sql[] = [Prisma.sql`l."status" = 'PUBLISHED'`];
-  if (filters.wheelchair) wheres.push(Prisma.sql`l."wheelchair" = true`);
-  if (filters.publicTransport)
-    wheres.push(Prisma.sql`l."publicTransport" = true`);
-  if (filters.restroom) wheres.push(Prisma.sql`l."restroom" = true`);
-  if (filters.paid === true) wheres.push(Prisma.sql`l."paid" = true`);
-  if (filters.paid === false) wheres.push(Prisma.sql`l."paid" = false`);
-  if (filters.priceMin != null)
-    wheres.push(Prisma.sql`COALESCE(l."priceMax", l."priceMin", 0) >= ${filters.priceMin}`);
-  if (filters.priceMax != null)
-    wheres.push(Prisma.sql`COALESCE(l."priceMin", l."priceMax", 0) <= ${filters.priceMax}`);
-  if (filters.styleTags && filters.styleTags.length > 0) {
-    wheres.push(Prisma.sql`l."styleTags" && ${filters.styleTags}::text[]`);
+  const wheres: Prisma.Sql[] = [
+    Prisma.sql`l."status" = 'PUBLISHED'`,
+    Prisma.sql`l."hidden" = false`,
+  ];
+
+  if (filters.boolFilters && filters.boolFilters.length > 0) {
+    for (const slug of filters.boolFilters) {
+      wheres.push(
+        Prisma.sql`EXISTS (
+          SELECT 1 FROM "LocationFilter" lf
+          JOIN "FilterDefinition" fd ON fd."id" = lf."filterId"
+          WHERE lf."locationId" = l."id" AND fd."slug" = ${slug} AND lf."boolValue" = true
+        )`,
+      );
+    }
   }
+
+  if (filters.paid === true) {
+    wheres.push(
+      Prisma.sql`EXISTS (
+        SELECT 1 FROM "LocationFilter" lf
+        JOIN "FilterDefinition" fd ON fd."id" = lf."filterId"
+        WHERE lf."locationId" = l."id" AND fd."slug" = 'paid' AND lf."boolValue" = true
+      )`,
+    );
+  }
+  if (filters.paid === false) {
+    wheres.push(
+      Prisma.sql`NOT EXISTS (
+        SELECT 1 FROM "LocationFilter" lf
+        JOIN "FilterDefinition" fd ON fd."id" = lf."filterId"
+        WHERE lf."locationId" = l."id" AND fd."slug" = 'paid' AND lf."boolValue" = true
+      )`,
+    );
+  }
+
+  if (filters.priceMin != null) {
+    wheres.push(
+      Prisma.sql`EXISTS (
+        SELECT 1 FROM "LocationFilter" lf
+        JOIN "FilterDefinition" fd ON fd."id" = lf."filterId"
+        WHERE lf."locationId" = l."id" AND fd."slug" = 'priceMax' AND lf."numValue" >= ${filters.priceMin}
+      )`,
+    );
+  }
+  if (filters.priceMax != null) {
+    wheres.push(
+      Prisma.sql`EXISTS (
+        SELECT 1 FROM "LocationFilter" lf
+        JOIN "FilterDefinition" fd ON fd."id" = lf."filterId"
+        WHERE lf."locationId" = l."id" AND fd."slug" = 'priceMin' AND lf."numValue" <= ${filters.priceMax}
+      )`,
+    );
+  }
+
+  if (filters.styleTags && filters.styleTags.length > 0) {
+    wheres.push(
+      Prisma.sql`EXISTS (
+        SELECT 1 FROM "LocationFilter" lf
+        JOIN "FilterDefinition" fd ON fd."id" = lf."filterId"
+        WHERE lf."locationId" = l."id" AND fd."slug" = ANY(${filters.styleTags}::text[]) AND lf."boolValue" = true
+      )`,
+    );
+  }
+
   if (filters.q && filters.q.trim().length > 0) {
     const term = `%${filters.q.trim()}%`;
-    wheres.push(Prisma.sql`(l."title" ILIKE ${term} OR l."description" ILIKE ${term})`);
+    wheres.push(
+      Prisma.sql`(l."title" ILIKE ${term} OR l."description" ILIKE ${term} OR l."city" ILIKE ${term} OR l."area" ILIKE ${term} OR l."country" ILIKE ${term})`,
+    );
   }
   if (filters.bbox) {
     const { minLng, minLat, maxLng, maxLat } = filters.bbox;
     wheres.push(Prisma.sql`l."longitude" BETWEEN ${minLng} AND ${maxLng}`);
     wheres.push(Prisma.sql`l."latitude" BETWEEN ${minLat} AND ${maxLat}`);
+  }
+  if (filters.favoritesOnly && filters.userId) {
+    wheres.push(
+      Prisma.sql`EXISTS (SELECT 1 FROM "Favorite" f WHERE f."userId" = ${filters.userId} AND f."locationId" = l."id")`,
+    );
+  }
+  if (filters.ratingMin != null && filters.ratingMin > 0) {
+    wheres.push(
+      Prisma.sql`COALESCE((SELECT AVG(r."stars") FROM "Rating" r WHERE r."locationId" = l."id"), 0) >= ${filters.ratingMin}`,
+    );
   }
 
   const whereSql = Prisma.join(wheres, " AND ");
@@ -111,12 +192,10 @@ export async function searchLocations(
     SELECT
       l."id", l."slug", l."title", l."description",
       l."latitude", l."longitude",
-      l."wheelchair", l."publicTransport", l."restroom", l."paid",
-      l."isSecret", l."styleTags",
       ${distanceSelect} AS distance_m,
       (
         SELECT COALESCE(SUM(p."helpfulCount"), 0)::int
-        FROM "Photo" p WHERE p."locationId" = l."id"
+        FROM "Photo" p WHERE p."locationId" = l."id" AND p."status" = 'APPROVED'
       ) AS "helpfulCount",
       (
         SELECT AVG(r."stars")::float FROM "Rating" r WHERE r."locationId" = l."id"
@@ -126,10 +205,22 @@ export async function searchLocations(
       ) AS "ratingCount",
       (
         SELECT p."cloudinaryPublicId" FROM "Photo" p
-        WHERE p."locationId" = l."id"
+        WHERE p."locationId" = l."id" AND p."status" = 'APPROVED'
         ORDER BY (CASE WHEN p."kind" = 'INSPIRATION' THEN 0 ELSE 1 END), p."createdAt" ASC
         LIMIT 1
-      ) AS hero
+      ) AS hero,
+      COALESCE(
+        (SELECT array_agg(fd."slug")
+         FROM "LocationFilter" lf
+         JOIN "FilterDefinition" fd ON fd."id" = lf."filterId"
+         WHERE lf."locationId" = l."id" AND lf."boolValue" = true),
+        ARRAY[]::text[]
+      ) AS filter_slugs,
+      (SELECT json_object_agg(fd."slug", lf."numValue")
+       FROM "LocationFilter" lf
+       JOIN "FilterDefinition" fd ON fd."id" = lf."filterId"
+       WHERE lf."locationId" = l."id" AND lf."numValue" IS NOT NULL
+      )::text AS filter_nums
     FROM "Location" l
     WHERE ${whereSql}
     ORDER BY ${orderSql}

@@ -4,8 +4,8 @@ const cloudName = process.env.CLOUDINARY_CLOUD_NAME ?? "";
 const apiKey = process.env.CLOUDINARY_API_KEY ?? "";
 const apiSecret = process.env.CLOUDINARY_API_SECRET ?? "";
 const watermarkPublicId =
-  process.env.CLOUDINARY_WATERMARK_PUBLIC_ID ?? "photoloc/watermark";
-const folder = process.env.CLOUDINARY_UPLOAD_FOLDER ?? "photoloc";
+  process.env.CLOUDINARY_WATERMARK_PUBLIC_ID ?? "locatepedia/watermark";
+const folder = process.env.CLOUDINARY_UPLOAD_FOLDER ?? "locatepedia";
 
 if (cloudName) {
   cloudinary.config({

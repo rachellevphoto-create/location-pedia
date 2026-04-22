@@ -2,9 +2,11 @@
 
 import * as React from "react";
 import Map, { Marker, NavigationControl, Popup, type MapRef } from "react-map-gl";
+import { useLocale, useTranslations } from "next-intl";
 import { Lock, MapPin } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import type { DiscoverItem } from "@/lib/api-types";
+import { applyMapLanguage } from "@/lib/map-language";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
@@ -24,11 +26,19 @@ export function DiscoverMap({
 }) {
   const ref = React.useRef<MapRef | null>(null);
   const [popup, setPopup] = React.useState<DiscoverItem | null>(null);
+  const t = useTranslations("Map");
+  const tCommon = useTranslations("Common");
+  const locale = useLocale();
+
+  React.useEffect(() => {
+    const map = ref.current?.getMap();
+    if (map) applyMapLanguage(map, locale);
+  }, [locale]);
 
   if (!TOKEN) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-muted text-sm text-muted-foreground">
-        Set <code className="mx-1">NEXT_PUBLIC_MAPBOX_TOKEN</code> to enable the map.
+      <div className="flex h-full w-full items-center justify-center bg-muted p-6 text-center text-sm text-muted-foreground">
+        {t("tokenMissingHelp")}
       </div>
     );
   }
@@ -43,6 +53,8 @@ export function DiscoverMap({
         zoom: initial?.zoom ?? 11,
       }}
       mapStyle="mapbox://styles/mapbox/streets-v12"
+      onLoad={(e) => applyMapLanguage(e.target, locale)}
+      onStyleData={(e) => applyMapLanguage(e.target, locale)}
       onMoveEnd={(e) => {
         const b = e.target.getBounds();
         if (!b) return;
@@ -95,10 +107,10 @@ export function DiscoverMap({
               {popup.description}
             </div>
             <Link
-              href={`/locations/${popup.slug}`}
+              href={`/locations/${popup.slug}` as any}
               className="text-xs text-primary underline"
             >
-              View details
+              {tCommon("viewDetails")}
             </Link>
           </div>
         </Popup>

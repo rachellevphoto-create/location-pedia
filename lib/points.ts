@@ -53,9 +53,10 @@ export async function unlockSecret(userId: string, locationId: string) {
 
     const location = await tx.location.findUnique({
       where: { id: locationId },
-      select: { isSecret: true, unlockCost: true, status: true },
+      select: { unlockCost: true, status: true, locationFilters: { include: { filter: { select: { slug: true } } } } },
     });
-    if (!location || location.status !== "PUBLISHED" || !location.isSecret) {
+    const isSecret = location?.locationFilters.some((lf) => lf.filter.slug === "isSecret" && lf.boolValue) ?? false;
+    if (!location || location.status !== "PUBLISHED" || !isSecret) {
       return { ok: false, error: "NOT_UNLOCKABLE" as const };
     }
     const user = await tx.user.findUnique({
