@@ -1,6 +1,6 @@
 import { PrismaClient, UserRole, UserStatus, LocationStatus, FilterCategory } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { slugify } from "../lib/utils";
+import { generateSlug } from "../lib/utils";
 
 const prisma = new PrismaClient();
 
@@ -29,6 +29,7 @@ const FILTER_DEFS = [
 ] as const;
 
 type SampleLocation = {
+  slug: string;
   title: string;
   description: string;
   latitude: number;
@@ -88,6 +89,7 @@ async function main() {
 
   const samples: SampleLocation[] = [
     {
+      slug: "0001-0001-0001",
       title: "Old Jaffa Stone Stairs",
       description:
         "Sun-warmed limestone stairs with a sea-glimpse alcove. Great for golden-hour portraits and editorial shoots.",
@@ -96,6 +98,7 @@ async function main() {
       filters: { publicTransport: true, restroom: true, urban: true, rustic: true, "golden-hour": true },
     },
     {
+      slug: "0001-0001-0002",
       title: "Florentin Mural Alley",
       description:
         "Saturated street-art alley, dense color, suitable for fashion and band portraits. Tight space, bring a 35mm.",
@@ -104,6 +107,7 @@ async function main() {
       filters: { wheelchair: true, publicTransport: true, urban: true, graffiti: true, fashion: true },
     },
     {
+      slug: "0001-0001-0003",
       title: "Hidden Wadi Pool",
       description:
         "Secret freshwater pool fringed by ferns. Best in spring after the rains. Coordinates redacted; unlock to view.",
@@ -118,12 +122,11 @@ async function main() {
   for (const fd of allDefs) filterDefMap.set(fd.slug, fd.id);
 
   for (const s of samples) {
-    const slug = slugify(s.title);
     const location = await prisma.location.upsert({
-      where: { slug },
+      where: { slug: s.slug },
       update: {},
       create: {
-        slug,
+        slug: s.slug,
         title: s.title,
         description: s.description,
         latitude: s.latitude,

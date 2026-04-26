@@ -27,6 +27,10 @@ export default async function AdminSubmissionsPage({
       submitter: { select: { fullName: true, email: true } },
       photos: { orderBy: { createdAt: "asc" } },
       locationFilters: { include: { filter: { select: { slug: true, category: true } } } },
+      reviewFeedbacks: {
+        orderBy: { createdAt: "desc" },
+        include: { author: { select: { fullName: true } } },
+      },
     },
     orderBy: { createdAt: "desc" },
     take: 50,
@@ -125,10 +129,33 @@ export default async function AdminSubmissionsPage({
                     {it.locationFilters.some((lf) => lf.filter.slug === "paid" && lf.boolValue) && <span>{t("tagPaid")}</span>}
                     <span>{t("photosCount", { count: it.photos.length })}</span>
                   </div>
-                  {it.reviewFeedback && (
-                    <p className="rounded bg-amber-50 p-2 text-xs text-amber-900">
-                      {t("previousFeedback", { feedback: it.reviewFeedback })}
-                    </p>
+                  {it.reviewFeedbacks.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {t("feedbackHistory")}
+                      </p>
+                      {it.reviewFeedbacks.map((fb, idx) => (
+                        <div
+                          key={fb.id}
+                          className={`rounded p-2 text-xs ${
+                            idx === 0
+                              ? "bg-amber-50 text-amber-900"
+                              : "bg-muted/50 text-muted-foreground"
+                          }`}
+                        >
+                          <span className="font-medium">
+                            {fb.author.fullName}
+                          </span>
+                          {" · "}
+                          <span>{formatDate(fb.createdAt)}</span>
+                          {" · "}
+                          <Badge variant="outline" className="text-[10px]">
+                            {fb.decision}
+                          </Badge>
+                          <p className="mt-1">{fb.body}</p>
+                        </div>
+                      ))}
+                    </div>
                   )}
                   <SubmissionDecision locationId={it.id} status={it.status} />
                 </div>

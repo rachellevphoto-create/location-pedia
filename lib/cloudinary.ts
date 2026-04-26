@@ -64,13 +64,13 @@ export function imageUrl(
   if (opts.height) transforms.push(`h_${opts.height}`);
   transforms.push(`c_${opts.crop ?? "fill"}`);
 
-  if (opts.watermark) {
-    transforms.push(
-      `l_${watermarkPublicId.replace(/\//g, ":")},o_45,w_0.4,fl_relative,g_south_east,x_20,y_20`,
-    );
+  const base = transforms.join(",");
+  const segments = [base];
+
+  if (opts.watermark && watermarkPublicId) {
+    const overlay = `l_${watermarkPublicId.replace(/\//g, ":")},o_45,w_0.4,fl_relative,g_south_east,x_20,y_20`;
+    segments.push(overlay);
   }
 
-  return `https://res.cloudinary.com/${PUBLIC_CLOUD}/image/upload/${transforms.join(
-    ",",
-  )}/${publicId}`;
+  return `https://res.cloudinary.com/${PUBLIC_CLOUD}/image/upload/${segments.join("/")}/${publicId}`;
 }

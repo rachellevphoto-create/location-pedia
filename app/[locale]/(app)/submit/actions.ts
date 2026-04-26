@@ -11,7 +11,7 @@ import {
   submitLocationSchema,
   type SubmitLocationInput,
 } from "@/lib/validation";
-import { slugify } from "@/lib/utils";
+import { generateSlug } from "@/lib/utils";
 import { reverseGeocode } from "@/lib/geocoding";
 
 export type SubmitResult =
@@ -34,12 +34,9 @@ export async function submitLocationAction(
     return { ok: false, error: "v:review", fieldErrors };
   }
   const data = parsed.data;
-  const baseSlug = slugify(data.title);
-  let slug = baseSlug;
-  let n = 1;
+  let slug = generateSlug();
   while (await prisma.location.findUnique({ where: { slug } })) {
-    n += 1;
-    slug = `${baseSlug}-${n}`;
+    slug = generateSlug();
   }
 
   const locale = await getLocale();
@@ -91,8 +88,8 @@ export async function submitLocationAction(
 
   revalidatePath("/admin/submissions");
   revalidatePath("/admin/locations");
-  redirect({
+  return redirect({
     href: "/submit/thanks",
     locale: locale as "he" | "en",
-  });
+  }) as never;
 }

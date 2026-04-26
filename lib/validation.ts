@@ -83,7 +83,7 @@ export const updateLocationSchema = submitLocationBase.extend({
   status: z
     .enum(["DRAFT", "PENDING", "PUBLISHED", "REJECTED", "NEEDS_REVISION"])
     .optional(),
-  reviewFeedback: z.string().max(2000).nullable().optional(),
+  newFeedback: z.string().max(2000).optional(),
   unlockCost: z.coerce.number().int().min(0).optional(),
   keepPhotoIds: z.array(z.string()).default([]),
   newPhotos: z.array(photoItemSchema).default([]),

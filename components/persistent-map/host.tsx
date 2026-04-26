@@ -118,7 +118,7 @@ export function PersistentMapHost() {
         }}
         mapStyle="mapbox://styles/mapbox/streets-v12"
         onLoad={(e) => applyMapLanguage(e.target, locale)}
-        onStyleData={(e) => applyMapLanguage(e.target, locale)}
+        onStyleData={() => { const m = ref.current?.getMap(); if (m) applyMapLanguage(m, locale); }}
         onMoveEnd={(e) => {
           const cb = onMoveEndRef.current;
           if (!cb) return;

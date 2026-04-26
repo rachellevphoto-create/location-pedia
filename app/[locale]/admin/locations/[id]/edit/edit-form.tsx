@@ -17,6 +17,7 @@ import {
   type UploadedPhoto,
 } from "@/components/photo-uploader";
 import { STYLE_TAGS } from "@/lib/validation";
+import { formatDate } from "@/lib/utils";
 import { updateLocationAction } from "@/app/[locale]/admin/actions";
 import type { FilterEntry } from "@/lib/validation";
 
@@ -26,6 +27,14 @@ type ExistingPhoto = {
   kind: "INSPIRATION" | "TECHNICAL";
   previewUrl: string;
   caption: string | null;
+};
+
+type FeedbackEntry = {
+  id: string;
+  authorName: string;
+  decision: string;
+  body: string;
+  createdAt: string;
 };
 
 export type EditLocationInitial = {
@@ -46,7 +55,7 @@ export type EditLocationInitial = {
   isSecret: boolean;
   status: string;
   unlockCost: number;
-  reviewFeedback: string | null;
+  feedbackHistory: FeedbackEntry[];
   existingPhotos: ExistingPhoto[];
 };
 
@@ -120,7 +129,7 @@ export function EditLocationForm({
   const [isSecret, setIsSecret] = React.useState(initial.isSecret);
   const [status, setStatus] = React.useState<string>(initial.status);
   const [unlockCost, setUnlockCost] = React.useState(initial.unlockCost.toString());
-  const [reviewFeedback, setReviewFeedback] = React.useState(initial.reviewFeedback ?? "");
+  const [newFeedback, setNewFeedback] = React.useState("");
 
   const [keepIds, setKeepIds] = React.useState<Set<string>>(
     new Set(initial.existingPhotos.map((p) => p.id)),
@@ -175,7 +184,7 @@ export function EditLocationForm({
         }),
         status: status as "DRAFT" | "PENDING" | "PUBLISHED" | "REJECTED" | "NEEDS_REVISION",
         unlockCost: Number(unlockCost) || 0,
-        reviewFeedback: reviewFeedback.trim() || null,
+        newFeedback: newFeedback.trim() || undefined,
         keepPhotoIds: Array.from(keepIds),
         newPhotos,
       });
@@ -396,13 +405,40 @@ export function EditLocationForm({
               ))}
             </select>
           </div>
+          {initial.feedbackHistory.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">{tAdmin("feedbackHistory")}</p>
+              <div className="space-y-1.5">
+                {initial.feedbackHistory.map((fb, idx) => (
+                  <div
+                    key={fb.id}
+                    className={`rounded p-2 text-xs ${
+                      idx === 0
+                        ? "bg-amber-50 text-amber-900"
+                        : "bg-muted/50 text-muted-foreground"
+                    }`}
+                  >
+                    <span className="font-medium">{fb.authorName}</span>
+                    {" · "}
+                    <span>{formatDate(fb.createdAt)}</span>
+                    {" · "}
+                    <Badge variant="outline" className="text-[10px]">
+                      {fb.decision}
+                    </Badge>
+                    <p className="mt-1">{fb.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="space-y-1.5">
-            <Label htmlFor="feedback">{tAdmin("reviewFeedback")}</Label>
+            <Label htmlFor="feedback">{tAdmin("addFeedback")}</Label>
             <Textarea
               id="feedback"
               rows={3}
-              value={reviewFeedback}
-              onChange={(e) => setReviewFeedback(e.target.value)}
+              value={newFeedback}
+              onChange={(e) => setNewFeedback(e.target.value)}
+              placeholder={tAdmin("addFeedbackPlaceholder")}
             />
           </div>
         </CardContent>

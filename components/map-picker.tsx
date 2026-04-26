@@ -44,7 +44,7 @@ export function MapPicker({
           }}
           mapStyle="mapbox://styles/mapbox/streets-v12"
           onLoad={(e) => applyMapLanguage(e.target, locale)}
-          onStyleData={(e) => applyMapLanguage(e.target, locale)}
+          onStyleData={() => { const m = mapRef.current?.getMap(); if (m) applyMapLanguage(m, locale); }}
           onClick={(e) => onChange({ lat: e.lngLat.lat, lng: e.lngLat.lng })}
           style={{ width: "100%", height: "100%" }}
         >

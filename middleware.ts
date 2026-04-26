@@ -41,7 +41,7 @@ export default auth((req) => {
 
   if (isAdminRoute && role !== "ADMIN") {
     const url = req.nextUrl.clone();
-    url.pathname = `${localePrefix}/`;
+    url.pathname = `${localePrefix}/discover`;
     url.search = "";
     return NextResponse.redirect(url);
   }

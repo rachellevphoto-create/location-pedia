@@ -83,11 +83,19 @@ export async function updateLocationAction(
                 data.status === "PUBLISHED" ? new Date() : undefined,
             }
           : {}),
-        ...(data.reviewFeedback !== undefined
-          ? { reviewFeedback: data.reviewFeedback }
-          : {}),
       },
     });
+
+    if (data.newFeedback?.trim()) {
+      await tx.reviewFeedback.create({
+        data: {
+          locationId: id,
+          authorId: admin.id,
+          decision: (data.status as LocationStatus) ?? LocationStatus.PENDING,
+          body: data.newFeedback.trim(),
+        },
+      });
+    }
 
     await tx.locationFilter.deleteMany({ where: { locationId: id } });
     if (data.filters.length > 0) {
@@ -249,7 +257,7 @@ export async function decideLocationAction(
   locationId: string,
   raw: unknown,
 ) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const parsed = adminDecisionSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Invalid decision" };
 
@@ -271,7 +279,6 @@ export async function decideLocationAction(
           status: LocationStatus.PUBLISHED,
           approvedAt: new Date(),
           awardedPoints: award,
-          reviewFeedback: null,
         },
       });
       if (award) {
@@ -308,31 +315,52 @@ export async function decideLocationAction(
       locale,
     }).catch(() => null);
   } else if (parsed.data.decision === "REVISION") {
-    await prisma.location.update({
-      where: { id: locationId },
-      data: {
-        status: LocationStatus.NEEDS_REVISION,
-        reviewFeedback: parsed.data.feedback,
-      },
+    const { feedback } = parsed.data;
+    await prisma.$transaction(async (tx) => {
+      await tx.location.update({
+        where: { id: locationId },
+        data: { status: LocationStatus.NEEDS_REVISION },
+      });
+      await tx.reviewFeedback.create({
+        data: {
+          locationId,
+          authorId: admin.id,
+          decision: LocationStatus.NEEDS_REVISION,
+          body: feedback,
+        },
+      });
     });
     await sendLocationRevision({
       to: submitter.email,
       fullName: submitter.fullName,
       title: location.title,
       slug: location.slug,
-      feedback: parsed.data.feedback,
+      feedback,
       locale,
     }).catch(() => null);
   } else if (parsed.data.decision === "REJECT") {
-    await prisma.location.update({
-      where: { id: locationId },
-      data: { status: LocationStatus.REJECTED, reviewFeedback: parsed.data.reason ?? null },
+    const { reason } = parsed.data;
+    await prisma.$transaction(async (tx) => {
+      await tx.location.update({
+        where: { id: locationId },
+        data: { status: LocationStatus.REJECTED },
+      });
+      if (reason) {
+        await tx.reviewFeedback.create({
+          data: {
+            locationId,
+            authorId: admin.id,
+            decision: LocationStatus.REJECTED,
+            body: reason,
+          },
+        });
+      }
     });
     await sendLocationRejected({
       to: submitter.email,
       fullName: submitter.fullName,
       title: location.title,
-      reason: parsed.data.reason,
+      reason,
       locale,
     }).catch(() => null);
   }

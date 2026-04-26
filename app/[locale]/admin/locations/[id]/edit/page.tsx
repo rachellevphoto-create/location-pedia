@@ -20,6 +20,10 @@ export default async function AdminEditLocationPage({
     include: {
       photos: { orderBy: [{ kind: "asc" }, { createdAt: "asc" }] },
       locationFilters: { include: { filter: true } },
+      reviewFeedbacks: {
+        orderBy: { createdAt: "desc" },
+        include: { author: { select: { fullName: true } } },
+      },
     },
   });
   if (!location) notFound();
@@ -63,7 +67,13 @@ export default async function AdminEditLocationPage({
           isSecret: fm.get("isSecret")?.boolValue ?? false,
           status: location.status,
           unlockCost: location.unlockCost,
-          reviewFeedback: location.reviewFeedback,
+          feedbackHistory: location.reviewFeedbacks.map((fb) => ({
+            id: fb.id,
+            authorName: fb.author.fullName,
+            decision: fb.decision,
+            body: fb.body,
+            createdAt: fb.createdAt.toISOString(),
+          })),
           existingPhotos: location.photos.map((p) => ({
             id: p.id,
             cloudinaryPublicId: p.cloudinaryPublicId,

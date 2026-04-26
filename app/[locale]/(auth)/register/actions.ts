@@ -51,5 +51,5 @@ export async function registerAction(
   const locale = await getLocale();
   await sendWelcome(user.email, user.fullName, locale).catch(() => null);
 
-  redirect({ href: "/pending", locale: locale as "he" | "en" });
+  return redirect({ href: "/pending", locale: locale as "he" | "en" }) as never;
 }
