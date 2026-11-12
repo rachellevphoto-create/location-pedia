@@ -1,29 +1,34 @@
+@import "mapbox-gl/dist/mapbox-gl.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --background: 48 21.7% 95.5%;
+    --foreground: 222.9 13.7% 10%;
+    --muted: 45 22.2% 92.9%;
+    --muted-foreground: 223.6 6.9% 31.2%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 222.9 13.7% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --card-foreground: 222.9 13.7% 10%;
+    --border: 45 12.9% 87.8%;
+    --input: 45 12.9% 87.8%;
+    --primary: 347.1 75.1% 47.5%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 22.2% 92.9%;
+    --secondary-foreground: 222.9 13.7% 10%;
+    --accent: 45 22.2% 92.9%;
+    --accent-foreground: 222.9 13.7% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 347.1 75.1% 47.5%;
     --radius: 0.6rem;
+    --lime: 62.9 67.5% 51.8%;
+    --lime-foreground: 222.9 13.7% 10%;
+    --crimson: 347.7 79.2% 52.9%;
   }
 
   .dark {
@@ -37,7 +42,7 @@
     --card-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --primary: 217.2 91.2% 59.8%;
+    --primary: 347.7 79.2% 52.9%;
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -45,7 +50,7 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --ring: 224.3 76.3% 48%;
+    --ring: 347.7 79.2% 52.9%;
   }
 }
 
@@ -58,5 +63,3 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
-
-@import "mapbox-gl/dist/mapbox-gl.css";

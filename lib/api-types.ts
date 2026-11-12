@@ -11,10 +11,14 @@ export type DiscoverItem = {
   publicTransport: boolean;
   restroom: boolean;
   paid: boolean;
+  drone: boolean;
   styleTags: string[];
+  filters: Record<string, boolean | number>;
   helpfulCount: number;
   ratingAvg: number | null;
   ratingCount: number;
   hero: string | null;
   distanceMeters: number | null;
+  isFavorite: boolean;
+  favoriteCount: number;
 };

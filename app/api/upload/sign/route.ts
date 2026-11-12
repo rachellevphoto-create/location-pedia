@@ -16,6 +16,6 @@ export async function POST() {
       { status: 503 },
     );
   }
-  const sig = signUpload({ tags: ["photoloc", `user:${session.user.id}`] });
+  const sig = signUpload({ tags: ["locatepedia", `user:${session.user.id}`] });
   return NextResponse.json(sig);
 }

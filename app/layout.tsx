@@ -1,23 +1,17 @@
-import type { Metadata } from "next";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
+import { getLocale } from "next-intl/server";
 
-export const metadata: Metadata = {
-  title: "PhotoLoc - Discover photography locations",
-  description:
-    "A community-driven hub where photographers discover, filter, and navigate to the best photography locations.",
-};
-
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+  const dir: "rtl" | "ltr" = locale === "he" ? "rtl" : "ltr";
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} dir={dir} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
         {children}
-        <Toaster />
       </body>
     </html>
   );

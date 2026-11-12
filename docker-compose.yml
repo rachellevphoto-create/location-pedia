@@ -1,16 +1,16 @@
 services:
   postgres:
     image: postgis/postgis:16-3.4
-    container_name: photoloc-postgres
+    container_name: locatepedia-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: photoloc
-      POSTGRES_PASSWORD: photoloc
-      POSTGRES_DB: photoloc
+      POSTGRES_USER: locatepedia
+      POSTGRES_PASSWORD: locatepedia
+      POSTGRES_DB: locatepedia
     ports:
       - "5432:5432"
     volumes:
-      - photoloc_pgdata:/var/lib/postgresql/data
+      - locatepedia_pgdata:/var/lib/postgresql/data
 
 volumes:
-  photoloc_pgdata:
+  locatepedia_pgdata:

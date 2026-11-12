@@ -11,21 +11,18 @@ export function formatDistanceKm(meters: number | null | undefined): string {
   return `${(meters / 1000).toFixed(1)} km`;
 }
 
-export function formatDate(d: Date | string): string {
+export function formatDate(d: Date | string, locale?: string): string {
   const date = typeof d === "string" ? new Date(d) : d;
-  return date.toLocaleDateString(undefined, {
+  return date.toLocaleDateString(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
 }
 
-export function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/[\s_-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
+/** Generate a numeric slug like "1714-1538-4027". */
+export function generateSlug(): string {
+  const ts = Date.now().toString();
+  const rand = Math.random().toString().slice(2, 6);
+  return `${ts.slice(0, 4)}-${ts.slice(4, 8)}-${rand}`;
 }

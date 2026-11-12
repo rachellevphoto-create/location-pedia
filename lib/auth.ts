@@ -1,4 +1,4 @@
-import NextAuth, { type DefaultSession } from "next-auth";
+import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import Email from "next-auth/providers/nodemailer";
@@ -6,32 +6,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import type { UserRole, UserStatus } from "@prisma/client";
-
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      role: UserRole;
-      status: UserStatus;
-      points: number;
-    } & DefaultSession["user"];
-  }
-
-  interface User {
-    role?: UserRole;
-    status?: UserStatus;
-    points?: number;
-  }
-}
-
-declare module "@auth/core/jwt" {
-  interface JWT {
-    role?: UserRole;
-    status?: UserStatus;
-    points?: number;
-    id?: string;
-  }
-}
+import { authConfig } from "@/lib/auth.config";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -66,6 +41,7 @@ const providers: any[] = [
         role: user.role,
         status: user.status,
         points: user.points,
+        locale: user.locale,
       };
     },
   }),
@@ -82,47 +58,38 @@ if (hasResend) {
           pass: process.env.RESEND_API_KEY!,
         },
       },
-      from: process.env.EMAIL_FROM ?? "PhotoLoc <noreply@example.com>",
+      from: process.env.EMAIL_FROM ?? "LocatePedia <noreply@example.com>",
     }),
   );
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-  },
-  trustHost: true,
   providers,
   callbacks: {
+    ...authConfig.callbacks,
     async jwt({ token, user, trigger }) {
       if (user) {
-        token.id = user.id;
-        token.role = (user as any).role;
-        token.status = (user as any).status;
-        token.points = (user as any).points;
+        token.id = (user as { id?: string }).id ?? token.id;
+        token.role = (user as { role?: UserRole }).role ?? token.role;
+        token.status = (user as { status?: UserStatus }).status ?? token.status;
+        token.points = (user as { points?: number }).points ?? token.points;
+        token.locale =
+          (user as { locale?: string | null }).locale ?? token.locale;
       } else if (token.id && (trigger === "update" || !token.role)) {
         const u = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true, status: true, points: true },
+          select: { role: true, status: true, points: true, locale: true },
         });
         if (u) {
           token.role = u.role;
           token.status = u.status;
           token.points = u.points;
+          token.locale = u.locale;
         }
       }
       return token;
-    },
-    async session({ session, token }) {
-      if (session.user && token) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as UserRole;
-        session.user.status = token.status as UserStatus;
-        session.user.points = (token.points as number) ?? 0;
-      }
-      return session;
     },
   },
 });

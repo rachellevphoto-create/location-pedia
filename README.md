@@ -1,4 +1,4 @@
-# PhotoLoc
+# LocatePedia
 
 A community-driven hub where photographers discover, filter, and navigate to vetted photography locations - the "Waze and Wolt" of photography spots.
 
@@ -55,7 +55,7 @@ npm install
 docker compose up -d            # boots Postgres+PostGIS on :5432
 npx prisma migrate dev --name init
 psql "$DATABASE_URL" -f prisma/postgis-index.sql   # spatial GIST index
-npm run db:seed                 # creates admin@photoloc.local / changeme123!
+npm run db:seed                 # creates admin@locatepedia.local / changeme123!
 npm run dev
 ```
 
@@ -63,7 +63,7 @@ Open http://localhost:3000.
 
 ### 3. Cloudinary watermark asset
 
-Upload a transparent PNG (your logo) to Cloudinary and copy its public ID into `CLOUDINARY_WATERMARK_PUBLIC_ID`. The default is `photoloc/watermark`. Inspiration-tab photos render with this overlay automatically via Cloudinary URL transforms; Technical-tab photos render raw.
+Upload a transparent PNG (your logo) to Cloudinary and copy its public ID into `CLOUDINARY_WATERMARK_PUBLIC_ID`. The default is `locatepedia/watermark`. Inspiration-tab photos render with this overlay automatically via Cloudinary URL transforms; Technical-tab photos render raw.
 
 ---
 

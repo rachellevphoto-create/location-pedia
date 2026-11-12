@@ -1,26 +1,36 @@
 "use client";
 
-import Link from "next/link";
-import {
-  Bus,
-  Coins,
-  Heart,
-  Lock,
-  ShowerHead,
-  Star,
-  Users,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
+import { Bus, Coins, Lock, Navigation, ShowerHead, Star, Users } from "lucide-react";
+import { Link } from "@/i18n/navigation";
+import { FavoriteButton } from "@/components/favorite-button";
 import { formatDistanceKm } from "@/lib/utils";
 import type { DiscoverItem } from "@/lib/api-types";
 
-export function LocationCard({ item }: { item: DiscoverItem }) {
+export function LocationCard({
+  item,
+  loggedIn,
+}: {
+  item: DiscoverItem;
+  loggedIn: boolean;
+}) {
+  const t = useTranslations("Card");
+  const tTags = useTranslations("Tags");
+  const tagLabels = item.styleTags.slice(0, 3).map((tag) => {
+    try {
+      return tTags(tag as any);
+    } catch {
+      return tag;
+    }
+  });
+  const locked = item.isSecret && !item.unlocked;
+
   return (
     <Link
-      href={`/locations/${item.slug}`}
-      className="group block overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+      href={`/locations/${item.slug}` as any}
+      className="group block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4"
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+      <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl bg-muted">
         {item.hero ? (
           <img
             src={item.hero}
@@ -28,59 +38,70 @@ export function LocationCard({ item }: { item: DiscoverItem }) {
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            No photo yet
+          <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+            {t("noPhoto")}
           </div>
         )}
-        {item.isSecret && !item.unlocked && (
+        {locked && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white backdrop-blur-sm">
             <div className="flex items-center gap-2 text-sm font-medium">
-              <Lock className="h-4 w-4" /> Secret - unlock with points
+              <Lock className="h-4 w-4" /> {t("secret")}
             </div>
           </div>
         )}
-        {item.ratingAvg != null && (
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">
-            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-            {item.ratingAvg.toFixed(1)}
-            <span className="text-white/70">({item.ratingCount})</span>
-          </div>
+        {item.isSecret && !locked && (
+          <span className="absolute start-2.5 top-2.5 rounded-md bg-foreground px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-lime">
+            {t("secret")}
+          </span>
         )}
-        {item.distanceMeters != null && (
-          <div className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">
-            {formatDistanceKm(item.distanceMeters)}
-          </div>
-        )}
-      </div>
-      <div className="space-y-2 p-4">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="line-clamp-1 text-base font-semibold">{item.title}</h3>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Heart className="h-3 w-3" />
-            {item.helpfulCount}
-          </div>
+        <div className="absolute end-2.5 top-2.5">
+          <FavoriteButton
+            locationId={item.id}
+            isFavorite={item.isFavorite}
+            count={item.favoriteCount}
+            loggedIn={loggedIn}
+          />
         </div>
-        <p className="line-clamp-2 text-xs text-muted-foreground">
-          {item.description}
-        </p>
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          {item.styleTags.slice(0, 3).map((t) => (
-            <Badge key={t} variant="secondary" className="text-[10px]">
-              {t}
-            </Badge>
-          ))}
-          <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
-            {item.publicTransport && (
-              <Bus className="h-3.5 w-3.5" aria-label="Transport" />
-            )}
-            {item.wheelchair && (
-              <Users className="h-3.5 w-3.5" aria-label="Accessible" />
-            )}
-            {item.restroom && (
-              <ShowerHead className="h-3.5 w-3.5" aria-label="Restroom" />
-            )}
-            {item.paid && <Coins className="h-3.5 w-3.5" aria-label="Paid" />}
-          </div>
+      </div>
+      <div className="mt-2.5 space-y-0.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="line-clamp-1 text-[15px] font-semibold">
+            {item.title}
+          </h3>
+          {item.ratingAvg != null && (
+            <span className="flex shrink-0 items-center gap-1 text-sm font-medium">
+              <Star className="h-3.5 w-3.5 fill-primary text-primary" />
+              {item.ratingAvg.toFixed(1)}
+              <span className="font-normal text-muted-foreground">
+                ({item.ratingCount})
+              </span>
+            </span>
+          )}
+        </div>
+        {item.distanceMeters != null && (
+          <p className="text-sm text-muted-foreground">
+            {formatDistanceKm(item.distanceMeters)}
+          </p>
+        )}
+        {tagLabels.length > 0 && (
+          <p className="line-clamp-1 text-sm text-muted-foreground">
+            {tagLabels.join(" · ")}
+          </p>
+        )}
+        <div className="flex items-center gap-2 pt-1 text-muted-foreground">
+          {item.publicTransport && (
+            <Bus className="h-4 w-4" aria-label={t("transport")} />
+          )}
+          {item.wheelchair && (
+            <Users className="h-4 w-4" aria-label={t("accessible")} />
+          )}
+          {item.restroom && (
+            <ShowerHead className="h-4 w-4" aria-label={t("restroom")} />
+          )}
+          {item.drone && (
+            <Navigation className="h-4 w-4" aria-label={t("drone")} />
+          )}
+          {item.paid && <Coins className="h-4 w-4" aria-label={t("paid")} />}
         </div>
       </div>
     </Link>

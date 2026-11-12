@@ -50,6 +50,11 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        lime: {
+          DEFAULT: "hsl(var(--lime))",
+          foreground: "hsl(var(--lime-foreground))",
+        },
+        crimson: "hsl(var(--crimson))",
       },
       borderRadius: {
         lg: "var(--radius)",
