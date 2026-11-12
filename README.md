@@ -65,6 +65,23 @@ Open http://localhost:3000.
 
 Upload a transparent PNG (your logo) to Cloudinary and copy its public ID into `CLOUDINARY_WATERMARK_PUBLIC_ID`. The default is `locatepedia/watermark`. Inspiration-tab photos render with this overlay automatically via Cloudinary URL transforms; Technical-tab photos render raw.
 
+### 4. Tests
+
+Tests use [Vitest](https://vitest.dev) and a separate database, `locatepedia_test`, on the same Postgres server as `DATABASE_URL`. Real data is never touched (the helpers refuse to run against any other database).
+
+```bash
+npm run test:db   # create/reset the test DB from prisma/schema.prisma (once, and after schema changes)
+npm test          # run all tests
+```
+
+`test:db` adds PostGIS with your local superuser (on Homebrew Postgres, your OS user). Set `PG_SUPERUSER_URL` if yours differs.
+
+Covered: points rules (daily cap, helpful once per voter, atomic unlock), premium-spot locking and masking (map/list API and detail page), fresh auth status, DB-driven filters, and locale-aware revalidation.
+
+### 5. Filters
+
+Amenity and style filters are rows in `FilterDefinition` (categories `AMENITY` and `STYLE`). Add a row and it appears in the filter bar, submit wizard, admin edit form, cards and detail page. Add its label to `messages/*.json` under `Amenities` / `AmenitiesLong` or `Tags` (until then the slug is shown). `paid`, `priceMin`, `priceMax` and `isSecret` have special logic; see `SYSTEM_FILTERS` in `lib/filters.ts`.
+
 ---
 
 ## Architecture

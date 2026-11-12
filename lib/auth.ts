@@ -8,6 +8,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import type { UserRole, UserStatus } from "@prisma/client";
 import { authConfig } from "@/lib/auth.config";
+import { loadAuthFields } from "@/lib/auth-refresh";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -84,10 +85,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // signing in again (admin approves / bans, points are spent). Re-read
       // them on every server-side auth() call so gating is never stale.
       if (token.id) {
-        const u = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { role: true, status: true, points: true, locale: true },
-        });
+        const u = await loadAuthFields(token.id as string);
         if (!u) return null; // user deleted -> drop the session
         token.role = u.role;
         token.status = u.status;

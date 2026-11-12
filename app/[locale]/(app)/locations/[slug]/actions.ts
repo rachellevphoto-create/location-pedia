@@ -11,6 +11,7 @@ import {
   type StatusUpdateInput,
 } from "@/lib/validation";
 import {
+  awardHelpfulOnce,
   awardPoints,
   canEarnStatusUpdatePoints,
   unlockSecret,
@@ -105,22 +106,7 @@ export async function toggleHelpfulAction(photoId: string, slug: string) {
         where: { id: photoId },
         data: { helpfulCount: { increment: 1 } },
       });
-      // Award once per (voter, photo): un-voting and voting again must not
-      // mint new points.
-      const voteRef = `${photo.id}:${user.id}`;
-      const alreadyAwarded = await tx.pointsLedger.findFirst({
-        where: { reason: "HELPFUL_RECEIVED", refType: "Helpful", refId: voteRef },
-        select: { id: true },
-      });
-      if (photo.uploaderId !== user.id && !alreadyAwarded) {
-        await awardPoints({
-          userId: photo.uploaderId,
-          reason: "HELPFUL_RECEIVED",
-          refType: "Helpful",
-          refId: voteRef,
-          tx,
-        });
-      }
+      await awardHelpfulOnce(tx, photo, user.id);
     }
   });
 
