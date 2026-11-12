@@ -181,6 +181,7 @@ model Location {
   @@index([latitude, longitude])
   @@index([city])
   @@index([area])
+  @@index([hidden])
 }
 
 model FilterDefinition {
