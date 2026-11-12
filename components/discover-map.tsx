@@ -28,6 +28,7 @@ export function DiscoverMap({
   const [popup, setPopup] = React.useState<DiscoverItem | null>(null);
   const t = useTranslations("Map");
   const tCommon = useTranslations("Common");
+  const tUnlock = useTranslations("Unlock");
   const locale = useLocale();
 
   React.useEffect(() => {
@@ -102,7 +103,9 @@ export function DiscoverMap({
           closeOnClick={false}
         >
           <div className="w-48 space-y-1">
-            <div className="text-sm font-semibold">{popup.title}</div>
+            <div className="text-sm font-semibold">
+                {popup.isSecret && !popup.unlocked ? tUnlock("secretTitle") : popup.title}
+              </div>
             <div className="line-clamp-2 text-xs text-muted-foreground">
               {popup.description}
             </div>

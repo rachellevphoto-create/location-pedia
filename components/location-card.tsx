@@ -16,6 +16,7 @@ export function LocationCard({
 }) {
   const t = useTranslations("Card");
   const tTags = useTranslations("Tags");
+  const tUnlock = useTranslations("Unlock");
   const tagLabels = item.styleTags.slice(0, 3).map((tag) => {
     try {
       return tTags(tag as any);
@@ -24,6 +25,7 @@ export function LocationCard({
     }
   });
   const locked = item.isSecret && !item.unlocked;
+  const title = locked ? tUnlock("secretTitle") : item.title;
 
   return (
     <Link
@@ -34,7 +36,7 @@ export function LocationCard({
         {item.hero ? (
           <img
             src={item.hero}
-            alt={item.title}
+            alt={title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
         ) : (
@@ -66,7 +68,7 @@ export function LocationCard({
       <div className="mt-2.5 space-y-0.5">
         <div className="flex items-baseline justify-between gap-2">
           <h3 className="line-clamp-1 text-[15px] font-semibold">
-            {item.title}
+            {title}
           </h3>
           {item.ratingAvg != null && (
             <span className="flex shrink-0 items-center gap-1 text-sm font-medium">

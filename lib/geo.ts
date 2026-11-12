@@ -37,6 +37,8 @@ export type DiscoverFilters = {
   ratingMin?: number | null;
   favoritesOnly?: boolean;
   userId?: string | null;
+  /** Admins see every premium spot unlocked. */
+  viewerIsAdmin?: boolean;
 };
 
 export type DiscoverRow = {
@@ -53,6 +55,9 @@ export type DiscoverRow = {
   distance_m: number | null;
   filter_slugs: string[];
   filter_nums: string | null;
+  /** Premium spot the viewer has not unlocked. latitude/longitude are then
+   *  rounded to 0.1 degree and distance_m is measured to that rounded point. */
+  locked: boolean;
 };
 
 /** Parsed filter map built from DiscoverRow raw data */
@@ -153,14 +158,18 @@ export async function searchLocations(
 
   if (filters.q && filters.q.trim().length > 0) {
     const term = `%${filters.q.trim()}%`;
+    // Locked premium spots never match text search: a hit would leak words
+    // from their hidden title/description/area.
     wheres.push(
-      Prisma.sql`(l."title" ILIKE ${term} OR l."description" ILIKE ${term} OR l."city" ILIKE ${term} OR l."area" ILIKE ${term} OR l."country" ILIKE ${term})`,
+      Prisma.sql`NOT v.locked AND (l."title" ILIKE ${term} OR l."description" ILIKE ${term} OR l."city" ILIKE ${term} OR l."area" ILIKE ${term} OR l."country" ILIKE ${term})`,
     );
   }
   if (filters.bbox) {
+    // Use the (masked) coords so zooming into a tiny box cannot pinpoint a
+    // locked spot.
     const { minLng, minLat, maxLng, maxLat } = filters.bbox;
-    wheres.push(Prisma.sql`l."longitude" BETWEEN ${minLng} AND ${maxLng}`);
-    wheres.push(Prisma.sql`l."latitude" BETWEEN ${minLat} AND ${maxLat}`);
+    wheres.push(Prisma.sql`v.lng BETWEEN ${minLng} AND ${maxLng}`);
+    wheres.push(Prisma.sql`v.lat BETWEEN ${minLat} AND ${maxLat}`);
   }
   if (filters.favoritesOnly && filters.userId) {
     wheres.push(
@@ -175,11 +184,25 @@ export async function searchLocations(
 
   const whereSql = Prisma.join(wheres, " AND ");
 
+  const lockedSql = filters.viewerIsAdmin
+    ? Prisma.sql`false`
+    : Prisma.sql`(
+        EXISTS (
+          SELECT 1 FROM "LocationFilter" lf
+          JOIN "FilterDefinition" fd ON fd."id" = lf."filterId"
+          WHERE lf."locationId" = l."id" AND fd."slug" = 'isSecret' AND lf."boolValue" = true
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM "SecretUnlock" su
+          WHERE su."locationId" = l."id" AND su."userId" = ${filters.userId ?? ""}
+        )
+      )`;
+
   const distanceSelect =
     fromLat != null && fromLng != null
       ? Prisma.sql`ST_Distance(
             ST_SetSRID(ST_MakePoint(${fromLng}, ${fromLat}), 4326)::geography,
-            ST_SetSRID(ST_MakePoint(l."longitude", l."latitude"), 4326)::geography
+            ST_SetSRID(ST_MakePoint(v.lng, v.lat), 4326)::geography
           )`
       : Prisma.sql`NULL`;
 
@@ -191,7 +214,7 @@ export async function searchLocations(
   const rows = await prisma.$queryRaw<DiscoverRow[]>`
     SELECT
       l."id", l."slug", l."title", l."description",
-      l."latitude", l."longitude",
+      v.lat AS "latitude", v.lng AS "longitude", v.locked AS "locked",
       ${distanceSelect} AS distance_m,
       (
         SELECT COALESCE(SUM(p."helpfulCount"), 0)::int
@@ -222,6 +245,15 @@ export async function searchLocations(
        WHERE lf."locationId" = l."id" AND lf."numValue" IS NOT NULL
       )::text AS filter_nums
     FROM "Location" l
+    CROSS JOIN LATERAL (
+      SELECT ${lockedSql} AS locked
+    ) lk
+    CROSS JOIN LATERAL (
+      SELECT
+        lk.locked AS locked,
+        CASE WHEN lk.locked THEN round(l."latitude"::numeric, 1)::float8 ELSE l."latitude" END AS lat,
+        CASE WHEN lk.locked THEN round(l."longitude"::numeric, 1)::float8 ELSE l."longitude" END AS lng
+    ) v
     WHERE ${whereSql}
     ORDER BY ${orderSql}
     LIMIT ${limit}

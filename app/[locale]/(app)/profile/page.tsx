@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Plus } from "lucide-react";
-import { auth } from "@/lib/auth";
+import { requireApprovedPage } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { imageUrl } from "@/lib/cloudinary";
 import { POINTS_VALUES } from "@/lib/points";
@@ -25,17 +25,16 @@ export default async function ProfilePage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const session = await auth();
-  if (!session?.user) redirect(`/${locale}/login?next=/${locale}/profile`);
+  const me = await requireApprovedPage(locale, "/profile");
 
   const t = await getTranslations("Profile");
   const tStatus = await getTranslations("Status");
   const tSubmit = await getTranslations("Submit");
 
   const [user, mySubmissions, ledger, approvedPhotos] = await Promise.all([
-    prisma.user.findUnique({ where: { id: session.user.id } }),
+    prisma.user.findUnique({ where: { id: me.id } }),
     prisma.location.findMany({
-      where: { submitterId: session.user.id },
+      where: { submitterId: me.id },
       orderBy: { createdAt: "desc" },
       take: 20,
       include: {
@@ -52,12 +51,12 @@ export default async function ProfilePage({
       },
     }),
     prisma.pointsLedger.findMany({
-      where: { userId: session.user.id },
+      where: { userId: me.id },
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
     prisma.photo.count({
-      where: { uploaderId: session.user.id, status: "APPROVED" },
+      where: { uploaderId: me.id, status: "APPROVED" },
     }),
   ]);
 

@@ -41,6 +41,7 @@ export default async function LocationDetailPage({
   const tCard = await getTranslations("Card");
   const tCommon = await getTranslations("Common");
   const tTags = await getTranslations("Tags");
+  const tUnlock = await getTranslations("Unlock");
   const session = await auth();
   const userId = session?.user?.id ?? null;
 
@@ -84,6 +85,10 @@ export default async function LocationDetailPage({
       })
     : null;
   const isUnlocked = !isSecret || isAdmin || !!unlock;
+  // A locked premium spot shows only a teaser: no title, text, photos,
+  // updates or reviews (any of these can give the place away).
+  const locked = !isUnlocked;
+  const displayTitle = locked ? tUnlock("secretTitle") : location.title;
 
   const ratingAvg =
     location.ratings.length === 0
@@ -154,7 +159,8 @@ export default async function LocationDetailPage({
     take: 50,
   });
 
-  const canContribute = !!userId && session?.user?.status === "APPROVED";
+  const canContribute =
+    !!userId && session?.user?.status === "APPROVED" && !locked;
 
   const totalHelpful = location.photos.reduce(
     (s, p) => s + p.helpfulCount,
@@ -205,7 +211,7 @@ export default async function LocationDetailPage({
             })}
           </div>
           <h1 className="text-3xl font-bold tracking-tight md:text-5xl">
-            {location.title}
+            {displayTitle}
           </h1>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-muted-foreground">
             {ratingAvg != null && (
@@ -247,7 +253,12 @@ export default async function LocationDetailPage({
         </div>
       </header>
 
-      {mosaic.length > 0 ? (
+      {locked ? (
+        <div className="flex h-[220px] flex-col items-center justify-center gap-2 rounded-2xl bg-muted text-sm text-muted-foreground">
+          <Lock className="h-6 w-6" aria-hidden />
+          {t("unlockToSeeCoords")}
+        </div>
+      ) : mosaic.length > 0 ? (
         <section
           aria-label={t("photosLabel")}
           className="grid h-[300px] grid-cols-2 gap-2.5 overflow-hidden rounded-2xl md:h-[450px] md:grid-cols-4 md:grid-rows-2"
@@ -266,7 +277,7 @@ export default async function LocationDetailPage({
                   height: i === 0 ? 900 : 450,
                   watermark: p.kind === "INSPIRATION",
                 })}
-                alt={p.caption ?? location.title}
+                alt={p.caption ?? displayTitle}
                 className="h-full w-full object-cover"
               />
               {i === mosaic.length - 1 && morePhotos > 0 && (
@@ -285,12 +296,14 @@ export default async function LocationDetailPage({
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-8">
+          {!locked && (
           <section className="space-y-2.5">
             <h2 className="text-2xl font-semibold">{t("aboutTitle")}</h2>
             <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground/85">
               {location.description}
             </p>
           </section>
+          )}
 
           <section
             aria-label={t("amenitiesLabel")}
@@ -317,6 +330,8 @@ export default async function LocationDetailPage({
             })}
           </section>
 
+          {!locked && (
+          <>
           <Tabs defaultValue="inspiration">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
               <TabsList>
@@ -388,7 +403,10 @@ export default async function LocationDetailPage({
               }))}
             />
           </section>
+          </>
+          )}
 
+          {!locked && (
           <ReviewsList
             currentUserId={userId}
             reviews={reviews.map((r) => ({
@@ -402,6 +420,7 @@ export default async function LocationDetailPage({
               updatedAt: r.updatedAt.toISOString(),
             }))}
           />
+          )}
         </div>
 
         <aside className="space-y-4">
@@ -449,6 +468,7 @@ export default async function LocationDetailPage({
             )}
           </div>
 
+          {!locked && (
           <RatingBlock
             slug={location.slug}
             current={myRating?.stars ?? 0}
@@ -456,6 +476,7 @@ export default async function LocationDetailPage({
             currentBody={myRating?.body ?? ""}
             canRate={!!userId && session?.user?.status === "APPROVED"}
           />
+          )}
 
           <div className="rounded-2xl border bg-card p-5 text-sm">
             <h3 className="font-semibold">{t("communityTitle")}</h3>

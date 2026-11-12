@@ -109,21 +109,41 @@ export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
   const setMapWidth = React.useCallback((w: number) => {
     const total = layoutRef.current?.clientWidth ?? 0;
     const max = Math.max(MAP_MIN, total - LIST_MIN);
-    setMapWidthRaw(Math.round(Math.min(max, Math.max(MAP_MIN, w))));
+    const clamped = Math.round(Math.min(max, Math.max(MAP_MIN, w)));
+    setMapWidthRaw(clamped);
+    return clamped;
   }, []);
 
-  React.useEffect(() => {
-    try {
-      const saved = parseInt(localStorage.getItem(MAP_WIDTH_KEY) ?? "", 10);
-      if (Number.isFinite(saved)) setMapWidth(saved);
-    } catch {}
-  }, [setMapWidth]);
+  // Default split: map and list share the row half and half (the 24px
+  // divider, MapResizer's w-6, sits between them).
+  const halfWidth = React.useCallback(
+    () => ((layoutRef.current?.clientWidth ?? MAP_DEFAULT * 2 + 24) - 24) / 2,
+    [],
+  );
 
+  // Restore the saved width once on load (or use half/half when nothing is
+  // saved). Only clamp it to the screen; do not write it back, so a smaller
+  // window doesn't overwrite the user's choice.
   React.useEffect(() => {
+    let saved = NaN;
     try {
-      localStorage.setItem(MAP_WIDTH_KEY, String(mapWidth));
+      saved = parseInt(localStorage.getItem(MAP_WIDTH_KEY) ?? "", 10);
     } catch {}
-  }, [mapWidth]);
+    setMapWidth(Number.isFinite(saved) ? saved : halfWidth());
+  }, [setMapWidth, halfWidth]);
+
+  // Save only when the user resizes (drag, keys, double-click reset). Saving
+  // from an effect on every change wrote the default 480 on first render,
+  // before the restore above had applied.
+  const changeMapWidth = React.useCallback(
+    (w: number) => {
+      const v = setMapWidth(w);
+      try {
+        localStorage.setItem(MAP_WIDTH_KEY, String(v));
+      } catch {}
+    },
+    [setMapWidth],
+  );
 
   React.useEffect(() => {
     if (!navigator.geolocation) return;
@@ -482,8 +502,14 @@ export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
         {view === "split" && (
           <MapResizer
             width={mapWidth}
-            onChange={setMapWidth}
-            onReset={() => setMapWidth(MAP_DEFAULT)}
+            onChange={changeMapWidth}
+            onReset={() => {
+              // Back to the default: half/half, and forget the saved size.
+              setMapWidth(halfWidth());
+              try {
+                localStorage.removeItem(MAP_WIDTH_KEY);
+              } catch {}
+            }}
             label={t("resizeMap")}
           />
         )}

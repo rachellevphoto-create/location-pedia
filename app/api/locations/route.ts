@@ -45,6 +45,7 @@ export async function GET(req: NextRequest) {
     ratingMin: ratingMin != null && ratingMin > 0 ? ratingMin : null,
     favoritesOnly: favoritesOnly && !!userId,
     userId,
+    viewerIsAdmin: isAdmin,
   };
 
   const fromLat = parseFloatOrNull(sp.get("fromLat"));
@@ -84,20 +85,12 @@ export async function GET(req: NextRequest) {
   }
   const ids = rows.map((r) => r.id);
 
-  const unlockedSet = new Set<string>();
   const favoriteSet = new Set<string>();
   if (userId && ids.length > 0) {
-    const [unlocks, favorites] = await Promise.all([
-      prisma.secretUnlock.findMany({
-        where: { userId, locationId: { in: ids } },
-        select: { locationId: true },
-      }),
-      prisma.favorite.findMany({
-        where: { userId, locationId: { in: ids } },
-        select: { locationId: true },
-      }),
-    ]);
-    for (const u of unlocks) unlockedSet.add(u.locationId);
+    const favorites = await prisma.favorite.findMany({
+      where: { userId, locationId: { in: ids } },
+      select: { locationId: true },
+    });
     for (const f of favorites) favoriteSet.add(f.locationId);
   }
 
@@ -116,7 +109,8 @@ export async function GET(req: NextRequest) {
   const features = rows.map((r) => {
     const fm = parseFilterRow(r);
     const isSecret = !!fm.isSecret;
-    const unlocked = !isSecret || isAdmin || unlockedSet.has(r.id);
+    // `locked` comes from SQL, which already masked coords and distance.
+    const unlocked = !r.locked;
     const styleTags = (r.filter_slugs ?? []).filter((s) => {
       // Style tags are the ones that aren't amenity/price/special slugs
       return !["wheelchair", "publicTransport", "restroom", "changingRoom", "drone", "paid", "priceMin", "priceMax", "isSecret"].includes(s);
@@ -125,10 +119,11 @@ export async function GET(req: NextRequest) {
     return {
       id: r.id,
       slug: r.slug,
-      title: unlocked ? r.title : "Premium location",
-      description: unlocked ? r.description : "Unlock to see details.",
-      latitude: unlocked ? r.latitude : maskCoord(r.latitude),
-      longitude: unlocked ? r.longitude : maskCoord(r.longitude),
+      // Locked: send no text at all; the client shows a translated teaser.
+      title: unlocked ? r.title : "",
+      description: unlocked ? r.description : "",
+      latitude: r.latitude,
+      longitude: r.longitude,
       isSecret,
       unlocked,
       wheelchair: !!fm.wheelchair,
@@ -141,7 +136,12 @@ export async function GET(req: NextRequest) {
       helpfulCount: r.helpfulCount ?? 0,
       ratingAvg: r.ratingAvg,
       ratingCount: r.ratingCount,
-      hero: r.hero ? imageUrl(r.hero, { width: 800, height: 600, watermark: true }) : null,
+      // Cloudinary URLs are public (a CSS blur is not protection), so a
+      // locked spot sends no photo.
+      hero:
+        unlocked && r.hero
+          ? imageUrl(r.hero, { width: 800, height: 600, watermark: true })
+          : null,
       distanceMeters: r.distance_m,
       isFavorite: favoriteSet.has(r.id),
       favoriteCount: favoriteCounts.get(r.id) ?? 0,
@@ -149,8 +149,4 @@ export async function GET(req: NextRequest) {
   });
 
   return NextResponse.json({ items: features });
-}
-
-function maskCoord(n: number) {
-  return Math.round(n * 10) / 10;
 }

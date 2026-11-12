@@ -10,6 +10,33 @@ export const POINTS_VALUES: Record<PointsReason, number> = {
   ADMIN_ADJUST: 0,
 };
 
+/** Max status updates per user per 24h that earn points. */
+export const STATUS_UPDATE_DAILY_POINTS_CAP = 3;
+
+/**
+ * Status updates are cheap to post, so they only earn points when the user
+ * has not hit the daily cap and has not already earned for this location in
+ * the last 24h. The update itself is always saved.
+ */
+export async function canEarnStatusUpdatePoints(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  locationId: string,
+) {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const earnedToday = await tx.pointsLedger.findMany({
+    where: { userId, reason: "STATUS_UPDATE", createdAt: { gte: since } },
+    select: { refId: true },
+  });
+  if (earnedToday.length >= STATUS_UPDATE_DAILY_POINTS_CAP) return false;
+  const ids = earnedToday.map((e) => e.refId).filter((x): x is string => !!x);
+  if (ids.length === 0) return true;
+  const sameLocation = await tx.statusUpdate.count({
+    where: { id: { in: ids }, locationId },
+  });
+  return sameLocation === 0;
+}
+
 type AwardArgs = {
   userId: string;
   reason: PointsReason;
@@ -59,24 +86,27 @@ export async function unlockSecret(userId: string, locationId: string) {
     if (!location || location.status !== "PUBLISHED" || !isSecret) {
       return { ok: false, error: "NOT_UNLOCKABLE" as const };
     }
-    const user = await tx.user.findUnique({
-      where: { id: userId },
-      select: { points: true },
+    // Spend atomically: the balance check and the decrement are one UPDATE,
+    // so two unlocks at the same time cannot push points below zero.
+    const spent = await tx.user.updateMany({
+      where: { id: userId, points: { gte: location.unlockCost } },
+      data: { points: { decrement: location.unlockCost } },
     });
-    if (!user || user.points < location.unlockCost) {
+    if (spent.count === 0) {
       return { ok: false, error: "INSUFFICIENT_POINTS" as const };
     }
 
     await tx.secretUnlock.create({
       data: { userId, locationId, pointsSpent: location.unlockCost },
     });
-    await awardPoints({
-      userId,
-      reason: "UNLOCK_SECRET",
-      delta: -location.unlockCost,
-      refType: "Location",
-      refId: locationId,
-      tx,
+    await tx.pointsLedger.create({
+      data: {
+        userId,
+        delta: -location.unlockCost,
+        reason: "UNLOCK_SECRET",
+        refType: "Location",
+        refId: locationId,
+      },
     });
     return { ok: true, alreadyUnlocked: false };
   });
