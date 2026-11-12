@@ -3,7 +3,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { auth } from "@/lib/auth";
 import { SiteNav } from "@/components/site-nav";
-import { Button } from "@/components/ui/button";
+import { prisma } from "@/lib/db";
+import { AdminNav } from "./admin-nav";
 
 export default async function AdminLayout({
   children,
@@ -21,34 +22,29 @@ export default async function AdminLayout({
 
   const t = await getTranslations("Admin");
 
+  const [subCount, photoCount, userCount] = await Promise.all([
+    prisma.location.count({ where: { status: { in: ["DRAFT", "PENDING"] } } }),
+    prisma.photo.count({ where: { status: "PENDING" } }),
+    prisma.user.count({ where: { status: "PENDING" } }),
+  ]);
+
   const links = [
     { href: "/admin", label: t("navOverview") },
-    { href: "/admin/submissions", label: t("navSubmissions") },
-    { href: "/admin/photos", label: t("navPhotos") },
-    { href: "/admin/users", label: t("navUsers") },
+    { href: "/admin/submissions", label: t("navSubmissions"), count: subCount },
+    { href: "/admin/photos", label: t("navPhotos"), count: photoCount },
+    { href: "/admin/users", label: t("navUsers"), count: userCount },
     { href: "/admin/locations", label: t("navLocations") },
   ];
 
   return (
     <div className="flex min-h-screen flex-col">
       <SiteNav />
-      <div className="container flex flex-col gap-6 py-6 md:flex-row">
-        <aside className="md:w-56 shrink-0">
-          <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="container flex flex-col gap-6 py-7 md:flex-row">
+        <aside className="shrink-0 md:w-56">
+          <p className="mb-2 px-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
             {t("section")}
           </p>
-          <nav className="flex flex-col gap-1 text-sm">
-            {links.map((l) => (
-              <Button
-                key={l.href}
-                asChild
-                variant="ghost"
-                className="justify-start"
-              >
-                <Link href={l.href}>{l.label}</Link>
-              </Button>
-            ))}
-          </nav>
+          <AdminNav links={links} />
         </aside>
         <main className="flex-1 min-w-0">{children}</main>
       </div>

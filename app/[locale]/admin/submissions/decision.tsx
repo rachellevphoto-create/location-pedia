@@ -57,10 +57,10 @@ export function SubmissionDecision({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2.5">
       <Button
-        size="sm"
         disabled={pending}
+        className="h-11 rounded-lg bg-emerald-700 px-4 text-white hover:bg-emerald-700/90"
         onClick={() =>
           decide({ decision: "APPROVE" }, t("approvedToast"))
         }
@@ -69,9 +69,9 @@ export function SubmissionDecision({
         {t("approveAndPoints")}
       </Button>
       <Button
-        size="sm"
         variant="outline"
         disabled={pending}
+        className="h-11 rounded-lg px-4"
         onClick={() =>
           decide({ decision: "APPROVE_NO_POINTS" }, t("approvedNoPointsToast"))
         }
@@ -81,7 +81,11 @@ export function SubmissionDecision({
 
       <Dialog>
         <DialogTrigger asChild>
-          <Button size="sm" variant="outline" disabled={pending}>
+          <Button
+            variant="outline"
+            disabled={pending}
+            className="h-11 rounded-lg px-4 text-primary hover:text-primary"
+          >
             {t("returnForRevision")}
           </Button>
         </DialogTrigger>
@@ -116,7 +120,11 @@ export function SubmissionDecision({
 
       <Dialog>
         <DialogTrigger asChild>
-          <Button size="sm" variant="destructive" disabled={pending}>
+          <Button
+            variant="ghost"
+            disabled={pending}
+            className="ms-auto h-11 rounded-lg bg-red-50 px-4 text-red-800 hover:bg-red-100 hover:text-red-900"
+          >
             {tCommon("reject")}
           </Button>
         </DialogTrigger>
