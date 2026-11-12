@@ -77,7 +77,7 @@ export function RatingBlock({
             <Star
               className={`h-6 w-6 ${
                 showing >= n
-                  ? "fill-amber-400 text-amber-400"
+                  ? "fill-primary text-primary"
                   : "text-muted-foreground"
               }`}
             />

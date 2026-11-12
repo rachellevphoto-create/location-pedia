@@ -139,7 +139,7 @@ export default async function AdminSubmissionsPage({
                           key={fb.id}
                           className={`rounded p-2 text-xs ${
                             idx === 0
-                              ? "bg-amber-50 text-amber-900"
+                              ? "bg-primary/10 text-foreground"
                               : "bg-muted/50 text-muted-foreground"
                           }`}
                         >

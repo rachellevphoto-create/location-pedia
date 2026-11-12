@@ -43,7 +43,7 @@ export function LocationCard({
         )}
         {item.ratingAvg != null && (
           <div className="absolute start-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">
-            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+            <Star className="h-3 w-3 fill-primary text-primary" />
             {item.ratingAvg.toFixed(1)}
             <span className="text-white/70">({item.ratingCount})</span>
           </div>

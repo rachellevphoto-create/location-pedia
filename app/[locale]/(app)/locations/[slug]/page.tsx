@@ -177,7 +177,7 @@ export default async function LocationDetailPage({
         <div className="container absolute inset-x-0 bottom-0 pb-6 text-white">
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {isSecret && (
-              <Badge className="bg-amber-500 text-white hover:bg-amber-500/90">
+              <Badge className="bg-foreground text-lime hover:bg-foreground/90">
                 <Sparkles className="me-1 h-3 w-3" /> {t("secretBadge")}
               </Badge>
             )}
@@ -199,7 +199,7 @@ export default async function LocationDetailPage({
           <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
             {ratingAvg != null && (
               <span className="inline-flex items-center gap-1">
-                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                <Star className="h-4 w-4 fill-primary text-primary" />
                 {ratingAvg.toFixed(1)} ({location.ratings.length})
               </span>
             )}

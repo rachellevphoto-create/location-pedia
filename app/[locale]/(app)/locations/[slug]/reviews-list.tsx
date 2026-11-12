@@ -63,7 +63,7 @@ export async function ReviewsList({
                       key={n}
                       className={`h-4 w-4 ${
                         r.stars >= n
-                          ? "fill-amber-400 text-amber-400"
+                          ? "fill-primary text-primary"
                           : "text-muted-foreground/40"
                       }`}
                     />

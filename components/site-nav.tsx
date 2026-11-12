@@ -53,7 +53,7 @@ export async function SiteNav() {
                 href="/profile"
                 className="hidden items-center gap-1.5 text-sm font-medium sm:flex"
               >
-                <Award className="h-4 w-4 text-amber-500" />
+                <Award className="h-4 w-4 text-primary" />
                 <span>{user.points ?? 0}</span>
               </Link>
               <form
@@ -80,8 +80,8 @@ export async function SiteNav() {
         </nav>
       </div>
       {user && user.status !== "APPROVED" && (
-        <div className="border-t bg-amber-50 py-1.5 text-center text-xs text-amber-900">
-          <Badge variant="outline" className="border-amber-300 bg-white">
+        <div className="border-t bg-lime/20 py-1.5 text-center text-xs text-foreground">
+          <Badge variant="outline" className="border-lime bg-white">
             {tStatus(user.status as "PENDING" | "REJECTED" | "BANNED")}
           </Badge>{" "}
           - {tNav("accountStatusBanner")}

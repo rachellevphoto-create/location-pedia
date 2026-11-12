@@ -147,7 +147,7 @@ export function PersistentMapHost() {
             <div
               className={`flex h-9 w-9 -translate-y-2 items-center justify-center rounded-full border-2 border-white shadow-md ${
                 it.isSecret && !it.unlocked
-                  ? "bg-amber-500 text-white"
+                  ? "bg-foreground text-lime"
                   : "bg-primary text-white"
               }`}
             >
