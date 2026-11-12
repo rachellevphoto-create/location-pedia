@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateAllLocales } from "@/lib/revalidate";
 import { prisma } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
 import {
@@ -57,7 +57,7 @@ export async function addStatusUpdateAction(
     }
   });
 
-  revalidatePath(`/locations/${slug}`);
+  revalidateAllLocales(`/locations/${slug}`);
   return { ok: true };
 }
 
@@ -124,7 +124,7 @@ export async function toggleHelpfulAction(photoId: string, slug: string) {
     }
   });
 
-  revalidatePath(`/locations/${slug}`);
+  revalidateAllLocales(`/locations/${slug}`);
   return { ok: true };
 }
 
@@ -165,7 +165,7 @@ export async function rateLocationAction(
       body,
     },
   });
-  revalidatePath(`/locations/${slug}`);
+  revalidateAllLocales(`/locations/${slug}`);
   return { ok: true };
 }
 
@@ -203,8 +203,8 @@ export async function addLocationPhotosAction(
     })),
   });
 
-  revalidatePath(`/locations/${slug}`);
-  revalidatePath("/admin/submissions");
+  revalidateAllLocales(`/locations/${slug}`);
+  revalidateAllLocales("/admin/submissions");
   return { ok: true, count: parsed.data.photos.length };
 }
 
@@ -216,6 +216,6 @@ export async function unlockSecretAction(slug: string) {
   });
   if (!location) return { ok: false, error: "Not found" };
   const result = await unlockSecret(user.id, location.id);
-  revalidatePath(`/locations/${slug}`);
+  revalidateAllLocales(`/locations/${slug}`);
   return result;
 }

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { getLocationDetail } from "@/lib/data/location-detail";
 import { getFilterOptions, SYSTEM_FILTERS } from "@/lib/filters";
 import { amenityIcon, filterLabel } from "@/lib/filter-ui";
 import { imageUrl } from "@/lib/cloudinary";
@@ -35,137 +35,48 @@ export default async function LocationDetailPage({
 }) {
   const { slug: paramSlug, locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("LocationDetail");
-  const tCard = await getTranslations("Card");
-  const tCommon = await getTranslations("Common");
-  const tTags = await getTranslations("Tags");
-  const tAmenity = await getTranslations("Amenities");
-  const filterOptions = await getFilterOptions();
-  const tUnlock = await getTranslations("Unlock");
-  const session = await auth();
+  const [t, tCard, tCommon, tTags, tAmenity, tUnlock, filterOptions, session] =
+    await Promise.all([
+      getTranslations("LocationDetail"),
+      getTranslations("Card"),
+      getTranslations("Common"),
+      getTranslations("Tags"),
+      getTranslations("Amenities"),
+      getTranslations("Unlock"),
+      getFilterOptions(),
+      auth(),
+    ]);
   const userId = session?.user?.id ?? null;
 
-  const location = await prisma.location.findUnique({
-    where: { slug: paramSlug },
-    include: {
-      submitter: { select: { fullName: true } },
-      photos: {
-        where: { status: "APPROVED" },
-        orderBy: [{ kind: "asc" }, { createdAt: "asc" }],
-        include: { uploader: { select: { fullName: true } } },
-      },
-      statusUpdates: {
-        orderBy: { createdAt: "desc" },
-        include: { author: { select: { fullName: true } } },
-        take: 30,
-      },
-      ratings: { select: { stars: true } },
-      locationFilters: { include: { filter: { select: { slug: true, category: true } } } },
-    },
-  });
-
-  const isAdmin = session?.user?.role === "ADMIN";
-
-  if (!location || (!isAdmin && (location.status !== "PUBLISHED" || location.hidden))) {
-    return notFound();
-  }
-
-  const fm = new Map<string, boolean>();
-  for (const lf of location.locationFilters) {
-    if (lf.boolValue) fm.set(lf.filter.slug, true);
-  }
-  const isSecret = fm.get(SYSTEM_FILTERS.isSecret) ?? false;
-  const styleTags = location.locationFilters
-    .filter((lf) => lf.filter.category === "STYLE" && lf.boolValue)
-    .map((lf) => lf.filter.slug);
-
-  const unlock = userId
-    ? await prisma.secretUnlock.findUnique({
-        where: { userId_locationId: { userId, locationId: location.id } },
-      })
-    : null;
-  const isUnlocked = !isSecret || isAdmin || !!unlock;
+  const detail = await getLocationDetail(paramSlug, session?.user ?? null);
+  if (!detail) return notFound();
+  const {
+    location,
+    onSlugs,
+    styleTags,
+    isSecret,
+    locked,
+    ratingAvg,
+    ratingCount,
+    photoCount,
+    totalHelpful,
+    inspirationPhotos,
+    technicalPhotos,
+    statusUpdates,
+    reviews,
+    myHelpfulIds,
+    myRating,
+    isFavorite,
+    favoriteCount,
+    myPendingPhotoCount,
+  } = detail;
+  const isUnlocked = !locked;
   // A locked premium spot shows only a teaser: no title, text, photos,
-  // updates or reviews (any of these can give the place away).
-  const locked = !isUnlocked;
+  // updates or reviews (the loader does not even fetch them).
   const displayTitle = locked ? tUnlock("secretTitle") : location.title;
-
-  const ratingAvg =
-    location.ratings.length === 0
-      ? null
-      : location.ratings.reduce((a, b) => a + b.stars, 0) /
-        location.ratings.length;
-
-  const inspirationPhotos = location.photos.filter(
-    (p) => p.kind === "INSPIRATION",
-  );
-  const technicalPhotos = location.photos.filter((p) => p.kind === "TECHNICAL");
-  const hero = inspirationPhotos[0] ?? technicalPhotos[0] ?? null;
-
-  const myHelpfulIds = userId
-    ? new Set(
-        (
-          await prisma.helpful.findMany({
-            where: {
-              userId,
-              photoId: { in: location.photos.map((p) => p.id) },
-            },
-            select: { photoId: true },
-          })
-        ).map((h) => h.photoId),
-      )
-    : new Set<string>();
-
-  const myRating = userId
-    ? await prisma.rating.findUnique({
-        where: {
-          userId_locationId: { userId, locationId: location.id },
-        },
-      })
-    : null;
-
-  const myFavorite = userId
-    ? await prisma.favorite.findUnique({
-        where: {
-          userId_locationId: { userId, locationId: location.id },
-        },
-        select: { id: true },
-      })
-    : null;
-  const favoriteCount = await prisma.favorite.count({
-    where: { locationId: location.id },
-  });
-
-  const myPendingPhotoCount = userId
-    ? await prisma.photo.count({
-        where: {
-          locationId: location.id,
-          uploaderId: userId,
-          status: "PENDING",
-        },
-      })
-    : 0;
-
-  const reviews = await prisma.rating.findMany({
-    where: {
-      locationId: location.id,
-      OR: [
-        { body: { not: null } },
-        { title: { not: null } },
-      ],
-    },
-    include: { user: { select: { id: true, fullName: true, image: true } } },
-    orderBy: { updatedAt: "desc" },
-    take: 50,
-  });
 
   const canContribute =
     !!userId && session?.user?.status === "APPROVED" && !locked;
-
-  const totalHelpful = location.photos.reduce(
-    (s, p) => s + p.helpfulCount,
-    0,
-  );
 
   const galleryPhotos = [...inspirationPhotos, ...technicalPhotos];
   const mosaic = galleryPhotos.slice(0, 5);
@@ -216,7 +127,7 @@ export default async function LocationDetailPage({
                 <strong className="text-foreground">
                   {ratingAvg.toFixed(1)}
                 </strong>
-                ({location.ratings.length})
+                ({ratingCount})
               </span>
             )}
             <span>{t("submittedBy", { name: location.submitter.fullName })}</span>
@@ -225,7 +136,7 @@ export default async function LocationDetailPage({
         <div className="flex flex-wrap items-center gap-2">
           <FavoriteButton
             locationId={location.id}
-            isFavorite={!!myFavorite}
+            isFavorite={isFavorite}
             count={favoriteCount}
             loggedIn={!!userId}
             variant="pill"
@@ -306,7 +217,7 @@ export default async function LocationDetailPage({
             className="grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-2.5"
           >
             {infoTiles.map(({ key, label, Icon }) => {
-              const on = fm.get(key) ?? false;
+              const on = onSlugs.has(key);
               return (
                 <div
                   key={key}
@@ -389,7 +300,7 @@ export default async function LocationDetailPage({
             <StatusUpdates
               slug={location.slug}
               canPost={!!userId && session?.user?.status === "APPROVED"}
-              updates={location.statusUpdates.map((u) => ({
+              updates={statusUpdates.map((u) => ({
                 id: u.id,
                 body: u.body,
                 kind: u.kind,
@@ -478,7 +389,7 @@ export default async function LocationDetailPage({
             <h3 className="font-semibold">{t("communityTitle")}</h3>
             <ul className="mt-2 space-y-1 text-muted-foreground">
               <li>{t("totalHelpful", { count: totalHelpful })}</li>
-              <li>{t("totalPhotos", { count: location.photos.length })}</li>
+              <li>{t("totalPhotos", { count: photoCount })}</li>
               <li>
                 {t("approvedAt", {
                   date: formatDate(location.approvedAt ?? location.createdAt, locale),

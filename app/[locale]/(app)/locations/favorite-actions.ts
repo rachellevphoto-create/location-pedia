@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateAllLocales } from "@/lib/revalidate";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -41,7 +41,7 @@ export async function toggleFavoriteAction(
 
   const favoriteCount = await prisma.favorite.count({ where: { locationId } });
 
-  revalidatePath(`/locations/${location.slug}`);
+  revalidateAllLocales(`/locations/${location.slug}`);
 
   return { ok: true, isFavorite, favoriteCount };
 }
