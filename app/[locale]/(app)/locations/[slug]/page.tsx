@@ -2,19 +2,17 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   ArrowLeft,
-  Bus,
   Coins,
   Lock,
-  Navigation,
   Navigation2 as NavigationIcon,
-  ShowerHead,
   Star,
-  Users,
   Sparkles,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getFilterOptions, SYSTEM_FILTERS } from "@/lib/filters";
+import { amenityIcon, filterLabel } from "@/lib/filter-ui";
 import { imageUrl } from "@/lib/cloudinary";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +39,8 @@ export default async function LocationDetailPage({
   const tCard = await getTranslations("Card");
   const tCommon = await getTranslations("Common");
   const tTags = await getTranslations("Tags");
+  const tAmenity = await getTranslations("Amenities");
+  const filterOptions = await getFilterOptions();
   const tUnlock = await getTranslations("Unlock");
   const session = await auth();
   const userId = session?.user?.id ?? null;
@@ -74,7 +74,7 @@ export default async function LocationDetailPage({
   for (const lf of location.locationFilters) {
     if (lf.boolValue) fm.set(lf.filter.slug, true);
   }
-  const isSecret = fm.get("isSecret") ?? false;
+  const isSecret = fm.get(SYSTEM_FILTERS.isSecret) ?? false;
   const styleTags = location.locationFilters
     .filter((lf) => lf.filter.category === "STYLE" && lf.boolValue)
     .map((lf) => lf.filter.slug);
@@ -172,12 +172,14 @@ export default async function LocationDetailPage({
   const morePhotos = Math.max(0, galleryPhotos.length - mosaic.length);
   const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
   const wazeUrl = `https://waze.com/ul?ll=${location.latitude},${location.longitude}&navigate=yes`;
+  // One tile per amenity in the DB (yes/no), plus paid entry.
   const infoTiles = [
-    { key: "wheelchair", label: tCard("accessible"), Icon: Users },
-    { key: "publicTransport", label: tCard("transport"), Icon: Bus },
-    { key: "restroom", label: tCard("restroom"), Icon: ShowerHead },
-    { key: "drone", label: tCard("drone"), Icon: Navigation },
-    { key: "paid", label: tCard("paid"), Icon: Coins },
+    ...filterOptions.amenities.map((slug) => ({
+      key: slug,
+      label: filterLabel(tAmenity, slug),
+      Icon: amenityIcon(slug),
+    })),
+    { key: SYSTEM_FILTERS.paid, label: tCard("paid"), Icon: Coins },
   ];
 
   return (
@@ -198,17 +200,11 @@ export default async function LocationDetailPage({
                 <Sparkles className="me-1 h-3 w-3" /> {t("secretBadge")}
               </Badge>
             )}
-            {styleTags.map((tag) => {
-              let label = tag;
-              try {
-                label = tTags(tag as any);
-              } catch {}
-              return (
-                <Badge key={tag} variant="secondary" className="font-normal">
-                  {label}
-                </Badge>
-              );
-            })}
+            {styleTags.map((tag) => (
+              <Badge key={tag} variant="secondary" className="font-normal">
+                {filterLabel(tTags, tag)}
+              </Badge>
+            ))}
           </div>
           <h1 className="text-3xl font-bold tracking-tight md:text-5xl">
             {displayTitle}
@@ -307,7 +303,7 @@ export default async function LocationDetailPage({
 
           <section
             aria-label={t("amenitiesLabel")}
-            className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5"
+            className="grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-2.5"
           >
             {infoTiles.map(({ key, label, Icon }) => {
               const on = fm.get(key) ?? false;

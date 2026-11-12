@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
+import { getFilterOptions, SYSTEM_FILTERS } from "@/lib/filters";
 import { imageUrl } from "@/lib/cloudinary";
 import { EditLocationForm } from "./edit-form";
 
@@ -36,6 +37,7 @@ export default async function AdminEditLocationPage({
   const styleTags = location.locationFilters
     .filter((lf) => lf.filter.category === "STYLE" && lf.boolValue)
     .map((lf) => lf.filter.slug);
+  const filterOptions = await getFilterOptions();
 
   return (
     <div className="container max-w-3xl py-8">
@@ -49,22 +51,21 @@ export default async function AdminEditLocationPage({
       </header>
       <EditLocationForm
         id={location.id}
+        filterOptions={filterOptions}
         initial={{
           title: location.title,
           description: location.description,
           directions: location.directions,
           latitude: location.latitude,
           longitude: location.longitude,
-          wheelchair: fm.get("wheelchair")?.boolValue ?? false,
-          publicTransport: fm.get("publicTransport")?.boolValue ?? false,
-          restroom: fm.get("restroom")?.boolValue ?? false,
-          changingRoom: fm.get("changingRoom")?.boolValue ?? false,
-          drone: fm.get("drone")?.boolValue ?? false,
-          paid: fm.get("paid")?.boolValue ?? false,
-          priceMin: fm.get("priceMin")?.numValue ?? null,
-          priceMax: fm.get("priceMax")?.numValue ?? null,
+          amenities: filterOptions.amenities.filter(
+            (slug) => fm.get(slug)?.boolValue,
+          ),
+          paid: fm.get(SYSTEM_FILTERS.paid)?.boolValue ?? false,
+          priceMin: fm.get(SYSTEM_FILTERS.priceMin)?.numValue ?? null,
+          priceMax: fm.get(SYSTEM_FILTERS.priceMax)?.numValue ?? null,
           styleTags,
-          isSecret: fm.get("isSecret")?.boolValue ?? false,
+          isSecret: fm.get(SYSTEM_FILTERS.isSecret)?.boolValue ?? false,
           status: location.status,
           unlockCost: location.unlockCost,
           feedbackHistory: location.reviewFeedbacks.map((fb) => ({

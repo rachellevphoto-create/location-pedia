@@ -18,30 +18,6 @@ export const registerSchema = z.object({
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 
-export const STYLE_TAGS = [
-  "urban",
-  "rustic",
-  "nature",
-  "water",
-  "graffiti",
-  "industrial",
-  "interior",
-  "fashion",
-  "moody",
-  "golden-hour",
-  "minimalist",
-  "wedding",
-] as const;
-export type StyleTag = (typeof STYLE_TAGS)[number];
-
-export const AMENITY_SLUGS = [
-  "wheelchair",
-  "publicTransport",
-  "restroom",
-  "changingRoom",
-  "drone",
-] as const;
-
 const photoItemSchema = z.object({
   cloudinaryPublicId: z.string().min(1),
   kind: z.enum(["INSPIRATION", "TECHNICAL"]),

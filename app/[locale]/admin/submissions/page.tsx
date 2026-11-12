@@ -4,6 +4,8 @@ import type { LocationStatus } from "@prisma/client";
 import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/db";
 import { imageUrl } from "@/lib/cloudinary";
+import { SYSTEM_FILTERS } from "@/lib/filters";
+import { filterLabel } from "@/lib/filter-ui";
 import { cn, formatDate } from "@/lib/utils";
 import { SubmissionDecision } from "./decision";
 
@@ -30,6 +32,7 @@ export default async function AdminSubmissionsPage({
 
   const t = await getTranslations("Admin");
   const tTags = await getTranslations("Tags");
+  const tAmenity = await getTranslations("Amenities");
   const tStatus = await getTranslations("Status.location");
 
   const status: LocationStatus = STATUSES.includes(
@@ -172,7 +175,7 @@ export default async function AdminSubmissionsPage({
               <div className="min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-2xl font-semibold">{selected.title}</h2>
-                  {hasFilter(selected, "isSecret") && (
+                  {hasFilter(selected, SYSTEM_FILTERS.isSecret) && (
                     <span className="rounded-md bg-foreground px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-lime">
                       {t("secretBadge")}
                     </span>
@@ -232,10 +235,10 @@ export default async function AdminSubmissionsPage({
                 <dt className="text-muted-foreground">{t("detailAmenities")}</dt>
                 <dd className="mt-1 font-semibold">
                   {[
-                    hasFilter(selected, "wheelchair") && t("tagAccessible"),
-                    hasFilter(selected, "publicTransport") && t("tagTransit"),
-                    hasFilter(selected, "restroom") && t("tagRestroom"),
-                    hasFilter(selected, "paid") && t("tagPaid"),
+                    ...selected.locationFilters
+                      .filter((lf) => lf.filter.category === "AMENITY" && lf.boolValue)
+                      .map((lf) => filterLabel(tAmenity, lf.filter.slug)),
+                    hasFilter(selected, SYSTEM_FILTERS.paid) && t("tagPaid"),
                   ]
                     .filter(Boolean)
                     .join(", ") || "—"}

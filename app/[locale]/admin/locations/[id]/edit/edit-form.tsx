@@ -16,7 +16,8 @@ import {
   PhotoUploader,
   type UploadedPhoto,
 } from "@/components/photo-uploader";
-import { STYLE_TAGS } from "@/lib/validation";
+import { filterLabel } from "@/lib/filter-ui";
+import type { FilterOptions } from "@/lib/filters";
 import { formatDate } from "@/lib/utils";
 import { updateLocationAction } from "@/app/[locale]/admin/actions";
 import type { FilterEntry } from "@/lib/validation";
@@ -43,11 +44,8 @@ export type EditLocationInitial = {
   directions: string | null;
   latitude: number;
   longitude: number;
-  wheelchair: boolean;
-  publicTransport: boolean;
-  restroom: boolean;
-  changingRoom: boolean;
-  drone: boolean;
+  /** AMENITY slugs that are on. */
+  amenities: string[];
   paid: boolean;
   priceMin: number | null;
   priceMax: number | null;
@@ -68,11 +66,7 @@ const STATUS_OPTIONS = [
 ] as const;
 
 function buildFilters(opts: {
-  wheelchair: boolean;
-  publicTransport: boolean;
-  restroom: boolean;
-  changingRoom: boolean;
-  drone: boolean;
+  amenities: string[];
   paid: boolean;
   priceMin: string;
   priceMax: string;
@@ -80,11 +74,9 @@ function buildFilters(opts: {
   styleTags: string[];
 }): FilterEntry[] {
   const entries: FilterEntry[] = [];
-  if (opts.wheelchair) entries.push({ slug: "wheelchair", boolValue: true });
-  if (opts.publicTransport) entries.push({ slug: "publicTransport", boolValue: true });
-  if (opts.restroom) entries.push({ slug: "restroom", boolValue: true });
-  if (opts.changingRoom) entries.push({ slug: "changingRoom", boolValue: true });
-  if (opts.drone) entries.push({ slug: "drone", boolValue: true });
+  for (const slug of opts.amenities) {
+    entries.push({ slug, boolValue: true });
+  }
   if (opts.paid) entries.push({ slug: "paid", boolValue: true });
   if (opts.priceMin) entries.push({ slug: "priceMin", boolValue: true, numValue: Number(opts.priceMin) });
   if (opts.priceMax) entries.push({ slug: "priceMax", boolValue: true, numValue: Number(opts.priceMax) });
@@ -98,9 +90,11 @@ function buildFilters(opts: {
 export function EditLocationForm({
   id,
   initial,
+  filterOptions,
 }: {
   id: string;
   initial: EditLocationInitial;
+  filterOptions: FilterOptions;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -108,6 +102,7 @@ export function EditLocationForm({
   const tAdmin = useTranslations("Admin");
   const tCommon = useTranslations("Common");
   const tTags = useTranslations("Tags");
+  const tAmenity = useTranslations("AmenitiesLong");
   const tStatus = useTranslations("Status.location");
 
   const [title, setTitle] = React.useState(initial.title);
@@ -117,11 +112,7 @@ export function EditLocationForm({
     lat: initial.latitude,
     lng: initial.longitude,
   });
-  const [wheelchair, setWheelchair] = React.useState(initial.wheelchair);
-  const [publicTransport, setPublicTransport] = React.useState(initial.publicTransport);
-  const [restroom, setRestroom] = React.useState(initial.restroom);
-  const [changingRoom, setChangingRoom] = React.useState(initial.changingRoom);
-  const [drone, setDrone] = React.useState(initial.drone);
+  const [amenities, setAmenities] = React.useState<string[]>(initial.amenities);
   const [paid, setPaid] = React.useState(initial.paid);
   const [priceMin, setPriceMin] = React.useState(initial.priceMin?.toString() ?? "");
   const [priceMax, setPriceMax] = React.useState(initial.priceMax?.toString() ?? "");
@@ -179,8 +170,7 @@ export function EditLocationForm({
         latitude: coords.lat,
         longitude: coords.lng,
         filters: buildFilters({
-          wheelchair, publicTransport, restroom, changingRoom, drone,
-          paid, priceMin, priceMax, isSecret, styleTags,
+          amenities, paid, priceMin, priceMax, isSecret, styleTags,
         }),
         status: status as "DRAFT" | "PENDING" | "PUBLISHED" | "REJECTED" | "NEEDS_REVISION",
         unlockCost: Number(unlockCost) || 0,
@@ -267,7 +257,7 @@ export function EditLocationForm({
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">{t("styleTags")}</legend>
             <div className="flex flex-wrap gap-2">
-              {STYLE_TAGS.map((tag) => (
+              {filterOptions.styles.map((tag) => (
                 <button
                   type="button"
                   key={tag}
@@ -277,7 +267,7 @@ export function EditLocationForm({
                   <Badge
                     variant={styleTags.includes(tag) ? "default" : "outline"}
                   >
-                    {tTags(tag as never)}
+                    {filterLabel(tTags, tag)}
                   </Badge>
                 </button>
               ))}
@@ -285,11 +275,20 @@ export function EditLocationForm({
           </fieldset>
 
           <fieldset className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <Toggle label={t("wheelchair")} checked={wheelchair} onChange={setWheelchair} />
-            <Toggle label={t("publicTransport")} checked={publicTransport} onChange={setPublicTransport} />
-            <Toggle label={t("restroom")} checked={restroom} onChange={setRestroom} />
-            <Toggle label={t("changingRoom")} checked={changingRoom} onChange={setChangingRoom} />
-            <Toggle label={t("drone")} checked={drone} onChange={setDrone} />
+            {filterOptions.amenities.map((slug) => (
+              <Toggle
+                key={slug}
+                label={filterLabel(tAmenity, slug)}
+                checked={amenities.includes(slug)}
+                onChange={(on) =>
+                  setAmenities((cur) =>
+                    on
+                      ? [...cur.filter((a) => a !== slug), slug]
+                      : cur.filter((a) => a !== slug),
+                  )
+                }
+              />
+            ))}
             <Toggle label={t("paidEntry")} checked={paid} onChange={setPaid} />
             <Toggle label={t("secretSpot")} checked={isSecret} onChange={setIsSecret} />
           </fieldset>

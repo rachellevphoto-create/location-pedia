@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { imageUrl } from "@/lib/cloudinary";
 import { forwardGeocode } from "@/lib/geocoding";
+import { getFilterOptions, SYSTEM_FILTERS } from "@/lib/filters";
 
 function parseBool(v: string | null): boolean | null {
   if (v === null) return null;
@@ -18,8 +19,6 @@ function parseFloatOrNull(v: string | null) {
   return Number.isFinite(n) ? n : null;
 }
 
-const BOOL_FILTER_PARAMS = ["wheelchair", "publicTransport", "restroom", "drone"] as const;
-
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const session = await auth();
@@ -29,15 +28,18 @@ export async function GET(req: NextRequest) {
   const favoritesOnly = parseBool(sp.get("favoritesOnly")) === true;
   const ratingMin = parseFloatOrNull(sp.get("ratingMin"));
 
-  const boolFilters: string[] = [];
-  for (const param of BOOL_FILTER_PARAMS) {
-    if (parseBool(sp.get(param))) boolFilters.push(param);
-  }
+  // Amenity and style slugs come from the DB; unknown slugs are ignored.
+  const options = await getFilterOptions();
+  const amenitySet = new Set(options.amenities);
+  const styleSet = new Set(options.styles);
+  const listParam = (name: string, allowed: Set<string>) =>
+    (sp.get(name) ?? "").split(",").filter((s) => allowed.has(s));
+  const boolFilters = listParam("amenities", amenitySet);
 
   const filters: DiscoverFilters = {
     boolFilters,
     paid: parseBool(sp.get("paid")),
-    styleTags: sp.get("tags")?.split(",").filter(Boolean) ?? [],
+    styleTags: listParam("tags", styleSet),
     priceMin: parseFloatOrNull(sp.get("priceMin")),
     priceMax: parseFloatOrNull(sp.get("priceMax")),
     q: sp.get("q"),
@@ -108,13 +110,10 @@ export async function GET(req: NextRequest) {
 
   const features = rows.map((r) => {
     const fm = parseFilterRow(r);
-    const isSecret = !!fm.isSecret;
+    const isSecret = !!fm[SYSTEM_FILTERS.isSecret];
     // `locked` comes from SQL, which already masked coords and distance.
     const unlocked = !r.locked;
-    const styleTags = (r.filter_slugs ?? []).filter((s) => {
-      // Style tags are the ones that aren't amenity/price/special slugs
-      return !["wheelchair", "publicTransport", "restroom", "changingRoom", "drone", "paid", "priceMin", "priceMax", "isSecret"].includes(s);
-    });
+    const slugs = r.filter_slugs ?? [];
 
     return {
       id: r.id,
@@ -126,12 +125,9 @@ export async function GET(req: NextRequest) {
       longitude: r.longitude,
       isSecret,
       unlocked,
-      wheelchair: !!fm.wheelchair,
-      publicTransport: !!fm.publicTransport,
-      restroom: !!fm.restroom,
-      paid: !!fm.paid,
-      drone: !!fm.drone,
-      styleTags,
+      amenities: options.amenities.filter((a) => slugs.includes(a)),
+      paid: !!fm[SYSTEM_FILTERS.paid],
+      styleTags: options.styles.filter((st) => slugs.includes(st)),
       filters: fm,
       helpfulCount: r.helpfulCount ?? 0,
       ratingAvg: r.ratingAvg,

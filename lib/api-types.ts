@@ -7,11 +7,10 @@ export type DiscoverItem = {
   longitude: number;
   isSecret: boolean;
   unlocked: boolean;
-  wheelchair: boolean;
-  publicTransport: boolean;
-  restroom: boolean;
+  /** AMENITY slugs this spot has, in sortOrder. */
+  amenities: string[];
   paid: boolean;
-  drone: boolean;
+  /** STYLE slugs this spot has, in sortOrder. */
   styleTags: string[];
   filters: Record<string, boolean | number>;
   helpfulCount: number;

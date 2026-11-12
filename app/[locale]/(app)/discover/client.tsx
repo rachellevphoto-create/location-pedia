@@ -4,18 +4,14 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
-  Bus,
   Coins,
   Heart,
   LayoutGrid,
   Loader2,
   Map as MapIcon,
-  Navigation,
   Plus,
   Search,
-  ShowerHead,
   Star,
-  Users,
   X,
 } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
@@ -25,7 +21,8 @@ import { Input } from "@/components/ui/input";
 import { LocationCard } from "@/components/location-card";
 import { MapSlot } from "@/components/persistent-map/slot";
 import { MultiSelect, type MultiSelectOption } from "@/components/ui/multi-select";
-import { STYLE_TAGS } from "@/lib/validation";
+import { amenityIcon, filterLabel } from "@/lib/filter-ui";
+import type { FilterOptions } from "@/lib/filters";
 import type { DiscoverItem } from "@/lib/api-types";
 
 type View = "split" | "list" | "map";
@@ -42,10 +39,7 @@ function useFilters() {
   const filters = React.useMemo(
     () => ({
       q: params.get("q") ?? "",
-      wheelchair: params.get("wheelchair") === "1",
-      publicTransport: params.get("publicTransport") === "1",
-      restroom: params.get("restroom") === "1",
-      drone: params.get("drone") === "1",
+      amenities: (params.get("amenities") ?? "").split(",").filter(Boolean),
       paid:
         params.get("paid") === "1"
           ? true
@@ -65,10 +59,9 @@ function useFilters() {
       const merged = { ...filters, ...next };
       if (merged.q) sp.set("q", merged.q);
       else sp.delete("q");
-      ["wheelchair", "publicTransport", "restroom", "drone"].forEach((k) => {
-        if ((merged as any)[k]) sp.set(k, "1");
-        else sp.delete(k);
-      });
+      if (merged.amenities.length > 0) {
+        sp.set("amenities", merged.amenities.join(","));
+      } else sp.delete("amenities");
       if (merged.paid === true) sp.set("paid", "1");
       else if (merged.paid === false) sp.set("paid", "0");
       else sp.delete("paid");
@@ -86,10 +79,17 @@ function useFilters() {
   return { filters, set };
 }
 
-export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
+export function DiscoverClient({
+  loggedIn,
+  filterOptions,
+}: {
+  loggedIn: boolean;
+  filterOptions: FilterOptions;
+}) {
   const { filters, set } = useFilters();
   const t = useTranslations("Discover");
   const tTags = useTranslations("Tags");
+  const tAmenity = useTranslations("Amenities");
   const [items, setItems] = React.useState<DiscoverItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [view, setView] = React.useState<View>("split");
@@ -165,10 +165,9 @@ export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
       setLoading(true);
       const sp = new URLSearchParams();
       if (filters.q) sp.set("q", filters.q);
-      if (filters.wheelchair) sp.set("wheelchair", "1");
-      if (filters.publicTransport) sp.set("publicTransport", "1");
-      if (filters.restroom) sp.set("restroom", "1");
-      if (filters.drone) sp.set("drone", "1");
+      if (filters.amenities.length > 0) {
+        sp.set("amenities", filters.amenities.join(","));
+      }
       if (filters.paid === true) sp.set("paid", "1");
       if (filters.paid === false) sp.set("paid", "0");
       if (filters.tags.length > 0) sp.set("tags", filters.tags.join(","));
@@ -199,42 +198,20 @@ export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
     };
   }, [filters, bbox, from]);
 
-  const amenityOptions: MultiSelectOption[] = [
-    {
-      value: "wheelchair",
-      label: t("filterAccessible"),
-      icon: <Users className="h-3.5 w-3.5" />,
+  const amenityOptions: MultiSelectOption[] = filterOptions.amenities.map(
+    (slug) => {
+      const Icon = amenityIcon(slug);
+      return {
+        value: slug,
+        label: filterLabel(tAmenity, slug),
+        icon: <Icon className="h-3.5 w-3.5" />,
+      };
     },
-    {
-      value: "publicTransport",
-      label: t("filterTransport"),
-      icon: <Bus className="h-3.5 w-3.5" />,
-    },
-    {
-      value: "restroom",
-      label: t("filterRestroom"),
-      icon: <ShowerHead className="h-3.5 w-3.5" />,
-    },
-    {
-      value: "drone",
-      label: t("filterDrone"),
-      icon: <Navigation className="h-3.5 w-3.5" />,
-    },
-  ];
-  const selectedAmenities = [
-    filters.wheelchair && "wheelchair",
-    filters.publicTransport && "publicTransport",
-    filters.restroom && "restroom",
-    filters.drone && "drone",
-  ].filter(Boolean) as string[];
+  );
+  const selectedAmenities = filters.amenities;
 
   function setAmenities(next: string[]) {
-    set({
-      wheelchair: next.includes("wheelchair"),
-      publicTransport: next.includes("publicTransport"),
-      restroom: next.includes("restroom"),
-      drone: next.includes("drone"),
-    });
+    set({ amenities: next });
   }
 
   const priceOptions: MultiSelectOption[] = [
@@ -261,15 +238,9 @@ export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
     else set({ paid: null });
   }
 
-  const styleOptions: MultiSelectOption[] = STYLE_TAGS.map((tag) => ({
+  const styleOptions: MultiSelectOption[] = filterOptions.styles.map((tag) => ({
     value: tag,
-    label: (() => {
-      try {
-        return tTags(tag as any);
-      } catch {
-        return tag;
-      }
-    })(),
+    label: filterLabel(tTags, tag),
   }));
 
   const chips: { key: string; label: string; remove: () => void }[] = [];
@@ -281,7 +252,8 @@ export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
       chips.push({
         key: o.value,
         label: String(o.label),
-        remove: () => set({ [o.value]: false } as any),
+        remove: () =>
+          set({ amenities: filters.amenities.filter((a) => a !== o.value) }),
       });
     }
   });
@@ -318,10 +290,7 @@ export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
     setSearchInput("");
     set({
       q: "",
-      wheelchair: false,
-      publicTransport: false,
-      restroom: false,
-      drone: false,
+      amenities: [],
       paid: null,
       tags: [],
       ratingMin: 0,
