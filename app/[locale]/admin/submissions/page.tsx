@@ -19,12 +19,13 @@ const STATUSES: LocationStatus[] = [
 
 export default async function AdminSubmissionsPage({
   params,
-  searchParams,
+  searchParams: searchParamsPromise,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: { status?: string; id?: string };
+  searchParams: Promise<{ status?: string; id?: string }>;
 }) {
   const { locale } = await params;
+  const searchParams = await searchParamsPromise;
   setRequestLocale(locale);
 
   const t = await getTranslations("Admin");

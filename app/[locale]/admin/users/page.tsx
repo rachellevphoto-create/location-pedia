@@ -9,12 +9,13 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage({
   params,
-  searchParams,
+  searchParams: searchParamsPromise,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: { status?: string };
+  searchParams: Promise<{ status?: string }>;
 }) {
   const { locale } = await params;
+  const searchParams = await searchParamsPromise;
   setRequestLocale(locale);
 
   const t = await getTranslations("Admin");
