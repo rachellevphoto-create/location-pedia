@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +23,7 @@ function SubmitButton() {
 export function RegisterForm() {
   const t = useTranslations("Auth");
   const tv = useTranslations("Auth.validation");
-  const [state, formAction] = useFormState(registerAction, initial);
+  const [state, formAction] = useActionState(registerAction, initial);
 
   function translateError(code?: string): string | undefined {
     if (!code) return undefined;
