@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Create (or reset) a separate database for the tests, next to the dev DB.
-# It is built from prisma/schema.prisma, so tests never touch real data.
+# It is built with the real migrations, so tests never touch real data.
 #
 #   npm run test:db
 set -euo pipefail
@@ -24,5 +24,5 @@ PORT="$(printf '%s' "$DATABASE_URL" | sed -E 's#.*:([0-9]+)/.*#\1#')"
 SUPER_URL="${PG_SUPERUSER_URL:-postgresql://localhost:$PORT/locatepedia_test}"
 "$PSQL" "$SUPER_URL" -qc "CREATE EXTENSION IF NOT EXISTS postgis"
 
-DATABASE_URL="$TEST_DATABASE_URL" npx prisma db push --skip-generate
+DATABASE_URL="$TEST_DATABASE_URL" npx prisma migrate deploy
 echo "Test database ready."

@@ -53,8 +53,7 @@ cp .env.example .env
 
 npm install
 docker compose up -d            # boots Postgres+PostGIS on :5432
-npx prisma migrate dev --name init
-psql "$DATABASE_URL" -f prisma/postgis-index.sql   # spatial GIST index
+npx prisma migrate deploy        # builds all tables, filters and the spatial index
 npm run db:seed                 # creates admin@locatepedia.local / changeme123!
 npm run dev
 ```
@@ -67,10 +66,10 @@ Upload a transparent PNG (your logo) to Cloudinary and copy its public ID into `
 
 ### 4. Tests
 
-Tests use [Vitest](https://vitest.dev) and a separate database, `locatepedia_test`, on the same Postgres server as `DATABASE_URL`. Real data is never touched (the helpers refuse to run against any other database).
+Tests use [Vitest](https://vitest.dev) and a separate database, `locatepedia_test`, on the same Postgres server as `DATABASE_URL`, built with the real migrations. Real data is never touched (the helpers refuse to run against any other database).
 
 ```bash
-npm run test:db   # create/reset the test DB from prisma/schema.prisma (once, and after schema changes)
+npm run test:db   # create/reset the test DB with the migrations (once, and after schema changes)
 npm test          # run all tests
 ```
 
@@ -114,7 +113,8 @@ emails/                   # React Email templates
 
 prisma/
   schema.prisma           # full data model
-  postgis-index.sql       # GIST index for geo queries
+  migrations/             # one baseline migration builds a new DB from zero
+  postgis-index.sql       # GIST index (already in the baseline; kept for old DBs)
   seed.ts                 # admin + demo photographer + sample locations
 
 middleware.ts             # status-gates app routes; role-gates /admin
@@ -133,8 +133,7 @@ middleware.ts             # status-gates app routes; role-gates /admin
 2. **Deploy**: push to GitHub, import the repo into Vercel. Set the env vars from `.env.example`.
 3. **Migrate** from local once after the first deploy:
    ```bash
-   DATABASE_URL=<neon-pooled-connection-string> npx prisma migrate deploy
-   psql "$DATABASE_URL" -f prisma/postgis-index.sql
+   DATABASE_URL=<neon-direct-connection-string> npx prisma migrate deploy
    npm run db:seed
    ```
 4. **Resend domain**: verify a sending domain in Resend, set `EMAIL_FROM=noreply@yourdomain.com`.
