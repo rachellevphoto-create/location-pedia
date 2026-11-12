@@ -125,7 +125,10 @@
     "viewMap": "מפה",
     "loadingResults": "טוען...",
     "resultsCount": "{count, plural, =0 {אין מיקומים} one {מיקום אחד} two {שני מיקומים} other {# מיקומים}}",
-    "emptyState": "אין מיקומים שתואמים את הסינון."
+    "emptyState": "אין מיקומים שתואמים את הסינון.",
+    "viewLabel": "תצוגה",
+    "removeFilter": "הסרת {label}",
+    "resizeMap": "שינוי גודל המפה. גררו, או השתמשו בחיצים. לחיצה כפולה לאיפוס."
   },
   "Map": {
     "tokenMissing": "הגדרו NEXT_PUBLIC_MAPBOX_TOKEN כדי להפעיל את המפה.",
@@ -180,7 +183,15 @@
     "addPhotosSuccessTitle": "נשלח לבדיקה",
     "addPhotosSuccessBody": "תודה! התמונות שלך ממתינות לאישור מנהל.",
     "addPhotosFailedTitle": "לא ניתן לשלוח את התמונות",
-    "pendingPhotoBadge": "{count, plural, one {תמונה אחת שלך ממתינה לאישור} two {שתי תמונות שלך ממתינות לאישור} other {# תמונות שלך ממתינות לאישור}}"
+    "pendingPhotoBadge": "{count, plural, one {תמונה אחת שלך ממתינה לאישור} two {שתי תמונות שלך ממתינות לאישור} other {# תמונות שלך ממתינות לאישור}}",
+    "backToDiscover": "חזרה לגילוי",
+    "navigate": "ניווט",
+    "photosLabel": "תמונות",
+    "morePhotos": "+{count} תמונות",
+    "aboutTitle": "על המקום",
+    "amenitiesLabel": "נגישות ומתקנים",
+    "yes": "כן",
+    "no": "לא"
   },
   "Gallery": {
     "noPhotos": "אין עדיין תמונות בגלריה זו.",
@@ -289,7 +300,13 @@
     "thanksTitle": "ההגשה התקבלה",
     "thanksDescription": "תודה על התרומה ל-LocatePedia. מנהל יבדוק את ההגשה בקרוב. תקבלו הודעת אימייל כשהיא תפורסם.",
     "thanksBackToDiscover": "חזרה לגילוי",
-    "thanksSubmitAnother": "הוסיפו עוד מיקום"
+    "thanksSubmitAnother": "הוסיפו עוד מיקום",
+    "stepsLabel": "שלבים",
+    "amenitiesLegend": "נגישות ומתקנים",
+    "previewLabel": "תצוגה מקדימה",
+    "previewNoCover": "תמונת השער תופיע כאן אחרי שלב 4",
+    "earnTitle": "אפשר להרוויח עד {points} נק׳",
+    "earnHelp": "{submit}+ אחרי אישור · {photo}+ על כל תמונה שאושרה"
   },
   "PhotoUploader": {
     "addPhotos": "הוספת תמונות",
@@ -309,6 +326,12 @@
     "recentPointsTitle": "נקודות אחרונות",
     "recentPointsDescription": "20 פעולות אחרונות",
     "noActivity": "עדיין אין פעילות.",
+    "memberSince": "חבר/ה מאז {date}",
+    "spotsCount": "{count, plural, one {מקום אחד} other {# מקומות}}",
+    "photosCount": "{count, plural, one {תמונה אחת} other {# תמונות}}",
+    "yourPoints": "הנקודות שלך",
+    "canUnlock": "{count, plural, =0 {צברו עוד כדי לפתוח מקום פרימיום} one {מספיק לפתיחת מקום פרימיום אחד} other {מספיק לפתיחת # מקומות פרימיום}}",
+    "adminSays": "מנהל: {text}",
     "reasons": {
       "SUBMIT_LOCATION": "הגשת מיקום",
       "ADD_PHOTO": "הוספת תמונה",

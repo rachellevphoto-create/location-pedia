@@ -71,13 +71,13 @@ export function FavoriteButton({
         className={cn(
           "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
           active
-            ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
+            ? "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15"
             : "bg-background hover:bg-accent",
           className,
         )}
       >
         <Heart
-          className={cn("h-4 w-4", active && "fill-rose-500 text-rose-500")}
+          className={cn("h-4 w-4", active && "fill-primary text-primary")}
         />
         <span>{localCount}</span>
       </button>
@@ -99,7 +99,7 @@ export function FavoriteButton({
       <Heart
         className={cn(
           "h-4 w-4 transition-transform",
-          active && "fill-rose-500 text-rose-500",
+          active && "fill-primary text-primary",
         )}
       />
     </button>

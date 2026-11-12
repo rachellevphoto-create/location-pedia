@@ -11,9 +11,9 @@ export function formatDistanceKm(meters: number | null | undefined): string {
   return `${(meters / 1000).toFixed(1)} km`;
 }
 
-export function formatDate(d: Date | string): string {
+export function formatDate(d: Date | string, locale?: string): string {
   const date = typeof d === "string" ? new Date(d) : d;
-  return date.toLocaleDateString(undefined, {
+  return date.toLocaleDateString(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",

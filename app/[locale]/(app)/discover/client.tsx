@@ -16,8 +16,10 @@ import {
   ShowerHead,
   Star,
   Users,
+  X,
 } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LocationCard } from "@/components/location-card";
@@ -27,6 +29,11 @@ import { STYLE_TAGS } from "@/lib/validation";
 import type { DiscoverItem } from "@/lib/api-types";
 
 type View = "split" | "list" | "map";
+
+const MAP_MIN = 320;
+const MAP_DEFAULT = 480;
+const LIST_MIN = 360;
+const MAP_WIDTH_KEY = "discover.mapWidth";
 
 function useFilters() {
   const params = useSearchParams();
@@ -96,6 +103,27 @@ export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
     null,
   );
   const [searchInput, setSearchInput] = React.useState(filters.q);
+  const layoutRef = React.useRef<HTMLDivElement>(null);
+  const [mapWidth, setMapWidthRaw] = React.useState(MAP_DEFAULT);
+
+  const setMapWidth = React.useCallback((w: number) => {
+    const total = layoutRef.current?.clientWidth ?? 0;
+    const max = Math.max(MAP_MIN, total - LIST_MIN);
+    setMapWidthRaw(Math.round(Math.min(max, Math.max(MAP_MIN, w))));
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      const saved = parseInt(localStorage.getItem(MAP_WIDTH_KEY) ?? "", 10);
+      if (Number.isFinite(saved)) setMapWidth(saved);
+    } catch {}
+  }, [setMapWidth]);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(MAP_WIDTH_KEY, String(mapWidth));
+    } catch {}
+  }, [mapWidth]);
 
   React.useEffect(() => {
     if (!navigator.geolocation) return;
@@ -224,23 +252,82 @@ export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
     })(),
   }));
 
+  const chips: { key: string; label: string; remove: () => void }[] = [];
+  if (filters.q) {
+    chips.push({ key: "q", label: `“${filters.q}”`, remove: () => set({ q: "" }) });
+  }
+  amenityOptions.forEach((o) => {
+    if (selectedAmenities.includes(o.value)) {
+      chips.push({
+        key: o.value,
+        label: String(o.label),
+        remove: () => set({ [o.value]: false } as any),
+      });
+    }
+  });
+  if (filters.paid !== null) {
+    chips.push({
+      key: "paid",
+      label: filters.paid ? t("filterPricePaid") : t("filterPriceFree"),
+      remove: () => set({ paid: null }),
+    });
+  }
+  filters.tags.forEach((tag) => {
+    const opt = styleOptions.find((o) => o.value === tag);
+    chips.push({
+      key: `tag-${tag}`,
+      label: String(opt?.label ?? tag),
+      remove: () => set({ tags: filters.tags.filter((x) => x !== tag) }),
+    });
+  });
+  if (filters.ratingMin > 0) {
+    chips.push({
+      key: "rating",
+      label: t("filterRatingN", { n: filters.ratingMin }),
+      remove: () => set({ ratingMin: 0 }),
+    });
+  }
+  if (filters.favoritesOnly) {
+    chips.push({
+      key: "fav",
+      label: t("filterFavoritesOnly"),
+      remove: () => set({ favoritesOnly: false }),
+    });
+  }
+  function clearAll() {
+    setSearchInput("");
+    set({
+      q: "",
+      wheelchair: false,
+      publicTransport: false,
+      restroom: false,
+      drone: false,
+      paid: null,
+      tags: [],
+      ratingMin: 0,
+      favoritesOnly: false,
+    });
+  }
+
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
-      <div className="border-b">
-        <div className="container flex flex-wrap items-center gap-3 py-3">
+      <div className="border-b bg-card">
+        <div className="container flex flex-wrap items-center gap-2.5 py-3.5">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               set({ q: searchInput });
             }}
-            className="relative flex-1 min-w-[200px]"
+            className="relative min-w-[220px] flex-1"
           >
-            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute start-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
             <Input
+              type="search"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder={t("searchPlaceholder")}
-              className="ps-9"
+              aria-label={t("searchPlaceholder")}
+              className="h-11 rounded-lg bg-background ps-10"
             />
           </form>
           <MultiSelect
@@ -295,46 +382,84 @@ export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
           />
           <Button
             type="button"
-            size="sm"
-            variant={filters.favoritesOnly ? "default" : "outline"}
+            variant="outline"
+            aria-pressed={filters.favoritesOnly}
             onClick={() => {
               if (!loggedIn) return;
               set({ favoritesOnly: !filters.favoritesOnly });
             }}
             disabled={!loggedIn}
             title={loggedIn ? undefined : t("filterFavoritesNeedsLogin")}
-            className="gap-1"
+            className={cn(
+              "h-11 gap-1.5 rounded-lg px-3.5",
+              filters.favoritesOnly &&
+                "border-foreground bg-foreground text-background hover:bg-foreground/90 hover:text-background",
+            )}
           >
             <Heart
-              className={`h-4 w-4 ${filters.favoritesOnly ? "fill-current" : ""}`}
+              className={cn("h-4 w-4", filters.favoritesOnly && "fill-current")}
             />
             {t("filterFavoritesOnly")}
           </Button>
-          <div className="ms-auto flex items-center gap-1 rounded-md border p-1 text-xs">
+          <div
+            role="group"
+            aria-label={t("viewLabel")}
+            className="ms-auto flex items-center rounded-lg bg-muted p-1"
+          >
             <ViewBtn current={view} value="split" onClick={setView}>
               {t("viewSplit")}
             </ViewBtn>
             <ViewBtn current={view} value="list" onClick={setView}>
-              <LayoutGrid className="h-4 w-4" />
+              <LayoutGrid className="h-4 w-4" aria-hidden />
+              <span className="hidden sm:inline">{t("viewList")}</span>
             </ViewBtn>
             <ViewBtn current={view} value="map" onClick={setView}>
-              <MapIcon className="h-4 w-4" />
+              <MapIcon className="h-4 w-4" aria-hidden />
+              <span className="hidden sm:inline">{t("viewMap")}</span>
             </ViewBtn>
           </div>
         </div>
+        {chips.length > 0 && (
+          <div className="container flex flex-wrap items-center gap-2 pb-3 text-sm">
+            {chips.map((c) => (
+              <span
+                key={c.key}
+                className="inline-flex items-center gap-1 rounded-full bg-muted py-1 pe-1 ps-3"
+              >
+                {c.label}
+                <button
+                  type="button"
+                  onClick={c.remove}
+                  aria-label={t("removeFilter", { label: c.label })}
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-background hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            ))}
+            <button
+              type="button"
+              onClick={clearAll}
+              className="px-1 py-1 font-semibold text-primary hover:underline"
+            >
+              {t("clearAll")}
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="grid flex-1 overflow-hidden md:grid-cols-2">
+      <div
+        ref={layoutRef}
+        className="flex min-h-0 flex-1 flex-col md:flex-row"
+      >
         {(view === "split" || view === "list") && (
-          <div
-            className={`overflow-y-auto ${view === "list" ? "md:col-span-2" : ""}`}
-          >
-            <div className="container py-4">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
+          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+            <div className="container py-5">
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-lg font-semibold">
                   {loading ? (
-                    <span className="inline-flex items-center gap-1">
-                      <Loader2 className="h-3 w-3 animate-spin" />{" "}
+                    <span className="inline-flex items-center gap-1.5 text-sm font-normal text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       {t("loadingResults")}
                     </span>
                   ) : (
@@ -345,7 +470,7 @@ export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
               {!loading && items.length === 0 ? (
                 <EmptyState />
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-x-4 gap-y-7">
                   {items.map((it) => (
                     <LocationCard key={it.id} item={it} loggedIn={loggedIn} />
                   ))}
@@ -354,8 +479,27 @@ export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
             </div>
           </div>
         )}
+        {view === "split" && (
+          <MapResizer
+            width={mapWidth}
+            onChange={setMapWidth}
+            onReset={() => setMapWidth(MAP_DEFAULT)}
+            label={t("resizeMap")}
+          />
+        )}
         {(view === "split" || view === "map") && (
-          <div className={view === "map" ? "md:col-span-2" : ""}>
+          <div
+            className={cn(
+              view === "map"
+                ? "min-h-0 flex-1"
+                : "h-[45vh] shrink-0 md:h-auto md:w-[var(--map-w)]",
+            )}
+            style={
+              view === "split"
+                ? ({ "--map-w": `${mapWidth}px` } as React.CSSProperties)
+                : undefined
+            }
+          >
             <MapSlot
               items={items}
               initial={from ?? undefined}
@@ -365,6 +509,89 @@ export function DiscoverClient({ loggedIn }: { loggedIn: boolean }) {
         )}
       </div>
     </div>
+  );
+}
+
+function MapResizer({
+  width,
+  onChange,
+  onReset,
+  label,
+}: {
+  width: number;
+  onChange: (w: number) => void;
+  onReset: () => void;
+  label: string;
+}) {
+  const drag = React.useRef<{ x: number; w: number; rtl: boolean } | null>(
+    null,
+  );
+  const [active, setActive] = React.useState(false);
+
+  function isRtl(el: Element) {
+    return getComputedStyle(el).direction === "rtl";
+  }
+  function end() {
+    drag.current = null;
+    setActive(false);
+  }
+
+  return (
+    <button
+      type="button"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={label}
+      aria-valuenow={width}
+      aria-valuemin={MAP_MIN}
+      title={label}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        drag.current = { x: e.clientX, w: width, rtl: isRtl(e.currentTarget) };
+        setActive(true);
+      }}
+      onPointerMove={(e) => {
+        const d = drag.current;
+        if (!d) return;
+        const dx = e.clientX - d.x;
+        // Map sits on the inline end: right in LTR, left in RTL.
+        onChange(d.rtl ? d.w + dx : d.w - dx);
+      }}
+      onPointerUp={end}
+      onPointerCancel={end}
+      onDoubleClick={onReset}
+      onKeyDown={(e) => {
+        const step = isRtl(e.currentTarget) ? -40 : 40;
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          onChange(width + step);
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          onChange(width - step);
+        }
+      }}
+      className="group relative hidden w-6 shrink-0 cursor-col-resize touch-none select-none items-center justify-center focus-visible:outline-none md:flex"
+    >
+      <span
+        aria-hidden
+        className={cn(
+          "absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-border transition-colors group-hover:bg-primary group-focus-visible:bg-primary",
+          active && "bg-primary",
+        )}
+      />
+      <span
+        aria-hidden
+        className={cn(
+          "relative flex h-11 w-3.5 flex-col items-center justify-center gap-[3px] rounded-md border bg-background shadow-sm group-focus-visible:ring-2 group-focus-visible:ring-ring",
+          active && "border-primary",
+        )}
+      >
+        <span className="h-1 w-1 rounded-full bg-muted-foreground" />
+        <span className="h-1 w-1 rounded-full bg-muted-foreground" />
+        <span className="h-1 w-1 rounded-full bg-muted-foreground" />
+      </span>
+    </button>
   );
 }
 
@@ -382,8 +609,15 @@ function ViewBtn({
   const active = current === value;
   return (
     <button
+      type="button"
+      aria-pressed={active}
       onClick={() => onClick(value)}
-      className={`rounded px-2 py-1 ${active ? "bg-primary text-primary-foreground" : ""}`}
+      className={cn(
+        "inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-colors",
+        active
+          ? "bg-background text-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground",
+      )}
     >
       {children}
     </button>

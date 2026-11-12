@@ -158,7 +158,7 @@ export function StatusUpdates({
             return (
               <li
                 key={u.id}
-                className="flex gap-3 rounded-lg border bg-card p-3 text-sm"
+                className="flex gap-3 rounded-xl border bg-card p-4 text-[15px]"
               >
                 <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Icon className="h-3.5 w-3.5" />

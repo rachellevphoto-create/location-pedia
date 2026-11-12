@@ -17,10 +17,10 @@ export default async function SubmitPage({
   const t = await getTranslations("Submit");
 
   return (
-    <div className="container py-8">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+    <div className="container max-w-6xl py-9">
+      <header className="mb-7 space-y-1.5">
+        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{t("title")}</h1>
+        <p className="text-[15px] text-muted-foreground">{t("subtitle")}</p>
       </header>
       <SubmitWizard isAdmin={session.user.role === "ADMIN"} />
     </div>

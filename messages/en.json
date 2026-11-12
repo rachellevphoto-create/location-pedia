@@ -125,7 +125,10 @@
     "viewMap": "Map",
     "loadingResults": "Loading...",
     "resultsCount": "{count, plural, =0 {No locations} one {# location} other {# locations}}",
-    "emptyState": "No locations match your filters yet."
+    "emptyState": "No locations match your filters yet.",
+    "viewLabel": "View",
+    "removeFilter": "Remove {label}",
+    "resizeMap": "Resize map. Drag, or use the arrow keys. Double-click to reset."
   },
   "Map": {
     "tokenMissing": "Set NEXT_PUBLIC_MAPBOX_TOKEN to enable the map.",
@@ -180,7 +183,15 @@
     "addPhotosSuccessTitle": "Sent for review",
     "addPhotosSuccessBody": "Thanks! Your photos are pending admin approval.",
     "addPhotosFailedTitle": "Could not submit photos",
-    "pendingPhotoBadge": "{count, plural, one {# of your photos pending review} other {# of your photos pending review}}"
+    "pendingPhotoBadge": "{count, plural, one {# of your photos pending review} other {# of your photos pending review}}",
+    "backToDiscover": "Back to Discover",
+    "navigate": "Navigate",
+    "photosLabel": "Photos",
+    "morePhotos": "+{count} photos",
+    "aboutTitle": "About this spot",
+    "amenitiesLabel": "Access and amenities",
+    "yes": "Yes",
+    "no": "No"
   },
   "Gallery": {
     "noPhotos": "No photos in this gallery yet.",
@@ -289,7 +300,13 @@
     "thanksTitle": "Submission received",
     "thanksDescription": "Thanks for contributing to LocatePedia. An admin will review your submission shortly. You will be notified by email when it goes live.",
     "thanksBackToDiscover": "Back to discover",
-    "thanksSubmitAnother": "Submit another"
+    "thanksSubmitAnother": "Submit another",
+    "stepsLabel": "Steps",
+    "amenitiesLegend": "Access & amenities",
+    "previewLabel": "Live preview",
+    "previewNoCover": "Your cover photo shows here after step 4",
+    "earnTitle": "You can earn up to {points} pts",
+    "earnHelp": "+{submit} when approved · +{photo} for each approved photo"
   },
   "PhotoUploader": {
     "addPhotos": "Add photos",
@@ -309,6 +326,12 @@
     "recentPointsTitle": "Recent points",
     "recentPointsDescription": "Last 20 entries",
     "noActivity": "No activity yet.",
+    "memberSince": "Member since {date}",
+    "spotsCount": "{count, plural, one {# spot} other {# spots}}",
+    "photosCount": "{count, plural, one {# photo} other {# photos}}",
+    "yourPoints": "Your points",
+    "canUnlock": "{count, plural, =0 {Earn more to unlock a premium spot} one {Enough to unlock # premium spot} other {Enough to unlock # premium spots}}",
+    "adminSays": "Admin: {text}",
     "reasons": {
       "SUBMIT_LOCATION": "submit location",
       "ADD_PHOTO": "add photo",

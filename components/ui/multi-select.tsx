@@ -72,14 +72,18 @@ export function MultiSelect({
     <div ref={wrapRef} className={cn("relative", className)}>
       <Button
         type="button"
-        variant={count > 0 ? "default" : "outline"}
-        size="sm"
+        variant="outline"
         onClick={() => setOpen((v) => !v)}
-        className="gap-1.5 font-normal"
+        aria-expanded={open}
+        className={cn(
+          "h-11 gap-1.5 rounded-lg px-3.5 font-medium",
+          count > 0 &&
+            "border-foreground bg-foreground text-background hover:bg-foreground/90 hover:text-background",
+        )}
       >
         <span>{label}</span>
         {count > 0 && (
-          <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-background/30 px-1 text-[10px] font-semibold">
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-lime px-1.5 text-[11px] font-bold text-lime-foreground">
             {count}
           </span>
         )}

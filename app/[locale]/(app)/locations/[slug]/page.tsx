@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
+  ArrowLeft,
   Bus,
   Coins,
   Lock,
   Navigation,
+  Navigation2 as NavigationIcon,
   ShowerHead,
   Star,
   Users,
@@ -17,7 +19,7 @@ import { imageUrl } from "@/lib/cloudinary";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { GalleryGrid } from "./gallery";
 import { StatusUpdates } from "./status-updates";
 import { RatingBlock } from "./rating-block";
@@ -159,23 +161,32 @@ export default async function LocationDetailPage({
     0,
   );
 
+  const galleryPhotos = [...inspirationPhotos, ...technicalPhotos];
+  const mosaic = galleryPhotos.slice(0, 5);
+  const morePhotos = Math.max(0, galleryPhotos.length - mosaic.length);
+  const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
+  const wazeUrl = `https://waze.com/ul?ll=${location.latitude},${location.longitude}&navigate=yes`;
+  const infoTiles = [
+    { key: "wheelchair", label: tCard("accessible"), Icon: Users },
+    { key: "publicTransport", label: tCard("transport"), Icon: Bus },
+    { key: "restroom", label: tCard("restroom"), Icon: ShowerHead },
+    { key: "drone", label: tCard("drone"), Icon: Navigation },
+    { key: "paid", label: tCard("paid"), Icon: Coins },
+  ];
+
   return (
-    <article>
-      <div className="relative h-[40vh] w-full overflow-hidden bg-muted">
-        {hero ? (
-          <img
-            src={imageUrl(hero.cloudinaryPublicId, {
-              width: 1600,
-              height: 900,
-              watermark: hero.kind === "INSPIRATION",
-            })}
-            alt={location.title}
-            className="h-full w-full object-cover"
-          />
-        ) : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-        <div className="container absolute inset-x-0 bottom-0 pb-6 text-white">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
+    <article className="container max-w-6xl space-y-6 py-6">
+      <Link
+        href="/discover"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
+        {t("backToDiscover")}
+      </Link>
+
+      <header className="flex flex-wrap items-end justify-between gap-5">
+        <div className="min-w-0 space-y-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             {isSecret && (
               <Badge className="bg-foreground text-lime hover:bg-foreground/90">
                 <Sparkles className="me-1 h-3 w-3" /> {t("secretBadge")}
@@ -187,59 +198,127 @@ export default async function LocationDetailPage({
                 label = tTags(tag as any);
               } catch {}
               return (
-                <Badge key={tag} variant="secondary">
+                <Badge key={tag} variant="secondary" className="font-normal">
                   {label}
                 </Badge>
               );
             })}
           </div>
-          <h1 className="mt-2 text-4xl font-bold md:text-5xl">
+          <h1 className="text-3xl font-bold tracking-tight md:text-5xl">
             {location.title}
           </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-muted-foreground">
             {ratingAvg != null && (
               <span className="inline-flex items-center gap-1">
                 <Star className="h-4 w-4 fill-primary text-primary" />
-                {ratingAvg.toFixed(1)} ({location.ratings.length})
+                <strong className="text-foreground">
+                  {ratingAvg.toFixed(1)}
+                </strong>
+                ({location.ratings.length})
               </span>
             )}
-            <span className="inline-flex items-center gap-1">
-              {fm.get("publicTransport") && (
-                <Bus className="h-4 w-4" aria-label={tCard("transport")} />
-              )}
-              {fm.get("wheelchair") && (
-                <Users className="h-4 w-4" aria-label={tCard("accessible")} />
-              )}
-              {fm.get("restroom") && (
-                <ShowerHead
-                  className="h-4 w-4"
-                  aria-label={tCard("restroom")}
-                />
-              )}
-              {fm.get("drone") && (
-                <Navigation className="h-4 w-4" aria-label={tCard("drone")} />
-              )}
-              {fm.get("paid") && (
-                <Coins className="h-4 w-4" aria-label={tCard("paid")} />
-              )}
-            </span>
-            <span className="opacity-80">
-              {t("submittedBy", { name: location.submitter.fullName })}
-            </span>
+            <span>{t("submittedBy", { name: location.submitter.fullName })}</span>
           </div>
         </div>
-      </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <FavoriteButton
+            locationId={location.id}
+            isFavorite={!!myFavorite}
+            count={favoriteCount}
+            loggedIn={!!userId}
+            variant="pill"
+            className="h-11 px-4"
+          />
+          {isUnlocked && (
+            <>
+              <Button asChild variant="outline" className="h-11 rounded-lg">
+                <a href={wazeUrl} target="_blank" rel="noreferrer">
+                  {tCommon("openIn")} Waze
+                </a>
+              </Button>
+              <Button asChild className="h-11 rounded-lg px-5">
+                <a href={googleUrl} target="_blank" rel="noreferrer">
+                  <NavigationIcon className="me-1.5 h-4 w-4" />
+                  {t("navigate")}
+                </a>
+              </Button>
+            </>
+          )}
+        </div>
+      </header>
 
-      <div className="container grid gap-8 py-8 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-8">
-          <section>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+      {mosaic.length > 0 ? (
+        <section
+          aria-label={t("photosLabel")}
+          className="grid h-[300px] grid-cols-2 gap-2.5 overflow-hidden rounded-2xl md:h-[450px] md:grid-cols-4 md:grid-rows-2"
+        >
+          {mosaic.map((p, i) => (
+            <div
+              key={p.id}
+              className={cn(
+                "relative overflow-hidden bg-muted",
+                mosaicTile(i, mosaic.length),
+              )}
+            >
+              <img
+                src={imageUrl(p.cloudinaryPublicId, {
+                  width: i === 0 ? 1200 : 600,
+                  height: i === 0 ? 900 : 450,
+                  watermark: p.kind === "INSPIRATION",
+                })}
+                alt={p.caption ?? location.title}
+                className="h-full w-full object-cover"
+              />
+              {i === mosaic.length - 1 && morePhotos > 0 && (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-sm font-semibold text-white">
+                  {t("morePhotos", { count: morePhotos })}
+                </span>
+              )}
+            </div>
+          ))}
+        </section>
+      ) : (
+        <div className="flex h-[220px] items-center justify-center rounded-2xl bg-muted text-sm text-muted-foreground">
+          {tCard("noPhoto")}
+        </div>
+      )}
+
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-8">
+          <section className="space-y-2.5">
+            <h2 className="text-2xl font-semibold">{t("aboutTitle")}</h2>
+            <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground/85">
               {location.description}
             </p>
           </section>
 
+          <section
+            aria-label={t("amenitiesLabel")}
+            className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5"
+          >
+            {infoTiles.map(({ key, label, Icon }) => {
+              const on = fm.get(key) ?? false;
+              return (
+                <div
+                  key={key}
+                  className="flex flex-col gap-1.5 rounded-xl border bg-card p-3.5"
+                >
+                  <Icon
+                    className={cn(
+                      "h-5 w-5",
+                      on ? "text-foreground" : "text-muted-foreground/60",
+                    )}
+                    aria-hidden
+                  />
+                  <span className="text-xs text-muted-foreground">{label}</span>
+                  <strong className="text-sm">{on ? t("yes") : t("no")}</strong>
+                </div>
+              );
+            })}
+          </section>
+
           <Tabs defaultValue="inspiration">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
               <TabsList>
                 <TabsTrigger value="inspiration">
                   {t("tabInspiration", { count: inspirationPhotos.length })}
@@ -295,9 +374,7 @@ export default async function LocationDetailPage({
           </Tabs>
 
           <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">{t("realtimeUpdates")}</h2>
-            </div>
+            <h2 className="text-2xl font-semibold">{t("realtimeUpdates")}</h2>
             <StatusUpdates
               slug={location.slug}
               canPost={!!userId && session?.user?.status === "APPROVED"}
@@ -328,19 +405,6 @@ export default async function LocationDetailPage({
         </div>
 
         <aside className="space-y-4">
-          <div className="flex items-center justify-between rounded-xl border p-4">
-            <div className="text-sm text-muted-foreground">
-              {favoriteCount} {favoriteCount === 1 ? "favorite" : "favorites"}
-            </div>
-            <FavoriteButton
-              locationId={location.id}
-              isFavorite={!!myFavorite}
-              count={favoriteCount}
-              loggedIn={!!userId}
-              variant="pill"
-            />
-          </div>
-
           {isSecret && !isUnlocked && (
             <UnlockButton
               slug={location.slug}
@@ -350,53 +414,29 @@ export default async function LocationDetailPage({
             />
           )}
 
-          <div className="rounded-xl border p-4">
+          <div className="rounded-2xl border bg-card p-5">
             <h3 className="font-semibold">{t("getThere")}</h3>
             {isUnlocked ? (
               <>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
-                </p>
                 {location.directions && location.directions.trim() && (
-                  <div className="mt-3 space-y-1.5">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      {t("directionsHeading")}
-                    </p>
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                      {location.directions}
-                    </p>
-                  </div>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
+                    {location.directions}
+                  </p>
                 )}
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">
-                    {tCommon("openIn")}
+                <p className="mt-3 text-xs text-muted-foreground">
+                  <span dir="ltr">
+                    {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
                   </span>
-                  <Button asChild variant="outline" size="icon">
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      title="Google Maps"
-                    >
-                      <svg viewBox="0 0 92.3 132.3" className="h-5 w-5">
-                        <path fill="#1a73e8" d="M60.2 2.2C55.8.8 51 0 46.1 0 32 0 19.3 6.4 10.8 16.5l21.8 18.3L60.2 2.2z" />
-                        <path fill="#ea4335" d="M10.8 16.5C4.1 24.5 0 34.9 0 46.1c0 8.7 1.7 15.7 4.6 22l28-33.3L10.8 16.5z" />
-                        <path fill="#4285f4" d="M46.2 28.5c9.8 0 17.7 7.9 17.7 17.7 0 4.3-1.6 8.3-4.2 11.4 0 0 13.9-16.6 27.5-32.7-5.6-10.8-15.3-19-27-22.7L32.6 34.8c3.3-3.8 8.1-6.3 13.6-6.3" />
-                        <path fill="#fbbc04" d="M46.2 63.8c-9.8 0-17.7-7.9-17.7-17.7 0-4.3 1.6-8.3 4.1-11.3l-28 33.3c4.8 10.6 12.8 19.2 21 29.9l34.1-40.5c-3.3 3.9-8.1 6.3-13.5 6.3" />
-                        <path fill="#34a853" d="M59.1 109.2c15.4-24.1 33.3-35 33.3-63 0-7.7-1.9-14.9-5.2-21.3L25.6 98c2.6 3.4 5.3 7.3 7.9 11.3 9.4 14.5 6.8 23.1 12.8 23.1s3.4-8.7 12.8-23.2" />
-                      </svg>
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button asChild variant="outline" className="rounded-lg">
+                    <a href={googleUrl} target="_blank" rel="noreferrer">
+                      Google Maps
                     </a>
                   </Button>
-                  <Button asChild variant="outline" size="icon">
-                    <a
-                      href={`https://waze.com/ul?ll=${location.latitude},${location.longitude}&navigate=yes`}
-                      target="_blank"
-                      rel="noreferrer"
-                      title="Waze"
-                    >
-                      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
-                        <path d="M20.54 6.63c-1.07-4.26-5.06-6.39-8.54-6.6-4.77-.3-9.31 2.51-10.85 7.01-1.16 3.39-.26 6.6.86 8.78-.07 1.67-.71 2.78-1.57 3.74-.43.49-.09 1.26.55 1.25 2.12-.05 4.36-.82 5.87-2.18 1.03.2 2.09.3 3.14.3 5.47 0 10.03-3.57 10.91-8.88.18-1.13.2-2.29-.36-3.42zm-13.04 5.1a1.37 1.37 0 1 1 0-2.74 1.37 1.37 0 0 1 0 2.74zm5 0a1.37 1.37 0 1 1 0-2.74 1.37 1.37 0 0 1 0 2.74z" />
-                      </svg>
+                  <Button asChild variant="outline" className="rounded-lg">
+                    <a href={wazeUrl} target="_blank" rel="noreferrer">
+                      Waze
                     </a>
                   </Button>
                 </div>
@@ -417,14 +457,14 @@ export default async function LocationDetailPage({
             canRate={!!userId && session?.user?.status === "APPROVED"}
           />
 
-          <div className="rounded-xl border p-4 text-sm">
+          <div className="rounded-2xl border bg-card p-5 text-sm">
             <h3 className="font-semibold">{t("communityTitle")}</h3>
             <ul className="mt-2 space-y-1 text-muted-foreground">
               <li>{t("totalHelpful", { count: totalHelpful })}</li>
               <li>{t("totalPhotos", { count: location.photos.length })}</li>
               <li>
                 {t("approvedAt", {
-                  date: formatDate(location.approvedAt ?? location.createdAt),
+                  date: formatDate(location.approvedAt ?? location.createdAt, locale),
                 })}
               </li>
             </ul>
@@ -433,4 +473,17 @@ export default async function LocationDetailPage({
       </div>
     </article>
   );
+}
+
+// Grid spans for the photo mosaic (4 columns x 2 rows on desktop), so any
+// count from 1 to 5 fills the box with no empty cells.
+function mosaicTile(i: number, n: number) {
+  if (i === 0) {
+    return n === 1 ? "col-span-2 row-span-2 md:col-span-4" : "col-span-2 row-span-2";
+  }
+  const base = "hidden md:block";
+  if (n === 2) return `${base} md:col-span-2 md:row-span-2`;
+  if (n === 3) return `${base} md:col-span-2`;
+  if (n === 4 && i === 3) return `${base} md:col-span-2`;
+  return base;
 }

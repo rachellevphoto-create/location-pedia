@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Lock, Loader2 } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { unlockSecretAction } from "./actions";
@@ -18,22 +19,10 @@ export function UnlockButton({
   userPoints: number;
   loggedIn: boolean;
 }) {
+  const t = useTranslations("Unlock");
+  const tCommon = useTranslations("Common");
   const [pending, start] = React.useTransition();
   const { toast } = useToast();
-
-  if (!loggedIn) {
-    return (
-      <div className="rounded-xl border bg-lime/15 p-4 text-sm">
-        <p className="font-semibold text-foreground">Premium location</p>
-        <p className="mt-1 text-muted-foreground">
-          Sign in and earn points to unlock exact details.
-        </p>
-        <Button asChild className="mt-3 w-full">
-          <Link href={`/login?next=/locations/${slug}`}>Sign in</Link>
-        </Button>
-      </div>
-    );
-  }
 
   const canAfford = userPoints >= cost;
 
@@ -41,10 +30,10 @@ export function UnlockButton({
     start(async () => {
       const res = await unlockSecretAction(slug);
       if (res.ok) {
-        toast({ title: "Unlocked", description: "Coordinates revealed." });
+        toast({ title: t("unlockedToast"), description: t("unlockedDescription") });
       } else {
         toast({
-          title: "Could not unlock",
+          title: t("couldNotUnlock"),
           description: res.error,
           variant: "destructive",
         });
@@ -53,21 +42,34 @@ export function UnlockButton({
   }
 
   return (
-    <div className="rounded-xl border bg-lime/15 p-4 text-sm">
-      <p className="flex items-center gap-2 font-semibold text-foreground">
-        <Lock className="h-4 w-4" /> Premium location
+    <div className="space-y-2.5 rounded-2xl bg-foreground p-5 text-sm text-background">
+      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-lime">
+        <Lock className="h-3.5 w-3.5" /> {t("secretTitle")}
       </p>
-      <p className="mt-1 text-muted-foreground">
-        Costs {cost} points. You have {userPoints}.
+      <p className="text-background/75">
+        {loggedIn
+          ? t("costHelp", { cost, points: userPoints })
+          : t("loggedOutHelp")}
       </p>
-      <Button
-        onClick={unlock}
-        disabled={!canAfford || pending}
-        className="mt-3 w-full bg-lime text-lime-foreground hover:bg-lime/90"
-      >
-        {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {canAfford ? `Unlock for ${cost} points` : "Not enough points"}
-      </Button>
+      {loggedIn ? (
+        <Button
+          onClick={unlock}
+          disabled={!canAfford || pending}
+          className="h-11 w-full rounded-lg bg-lime font-bold text-lime-foreground hover:bg-lime/90"
+        >
+          {pending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+          {canAfford ? t("unlockFor", { cost }) : t("notEnoughPoints")}
+        </Button>
+      ) : (
+        <Button
+          asChild
+          className="h-11 w-full rounded-lg bg-lime font-bold text-lime-foreground hover:bg-lime/90"
+        >
+          <Link href={`/login?next=/locations/${slug}` as any}>
+            {tCommon("signIn")}
+          </Link>
+        </Button>
+      )}
     </div>
   );
 }
