@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { auth } from "@/lib/auth";
+import { requireApprovedPage } from "@/lib/auth";
 import { SubmitWizard } from "./wizard";
 
 export default async function SubmitPage({
@@ -10,9 +9,7 @@ export default async function SubmitPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const session = await auth();
-  if (!session?.user) redirect(`/${locale}/login?next=/${locale}/submit`);
-  if (session.user.status !== "APPROVED") redirect(`/${locale}/pending`);
+  const user = await requireApprovedPage(locale, "/submit");
 
   const t = await getTranslations("Submit");
 
@@ -22,7 +19,7 @@ export default async function SubmitPage({
         <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{t("title")}</h1>
         <p className="text-[15px] text-muted-foreground">{t("subtitle")}</p>
       </header>
-      <SubmitWizard isAdmin={session.user.role === "ADMIN"} />
+      <SubmitWizard isAdmin={user.role === "ADMIN"} />
     </div>
   );
 }

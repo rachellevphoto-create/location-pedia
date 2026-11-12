@@ -10,7 +10,12 @@ import {
   type AddPhotosInput,
   type StatusUpdateInput,
 } from "@/lib/validation";
-import { awardPoints, unlockSecret } from "@/lib/points";
+import {
+  awardPoints,
+  canEarnStatusUpdatePoints,
+  unlockSecret,
+} from "@/lib/points";
+import { isLockedFor } from "@/lib/secret";
 
 export async function addStatusUpdateAction(
   slug: string,
@@ -27,8 +32,12 @@ export async function addStatusUpdateAction(
   if (!location || location.status !== "PUBLISHED" || location.hidden) {
     return { ok: false, error: "Location not found" };
   }
+  if (await isLockedFor(location.id, user)) {
+    return { ok: false, error: "Location is locked" };
+  }
 
   await prisma.$transaction(async (tx) => {
+    const earns = await canEarnStatusUpdatePoints(tx, user.id, location.id);
     const update = await tx.statusUpdate.create({
       data: {
         locationId: location.id,
@@ -37,13 +46,15 @@ export async function addStatusUpdateAction(
         kind: parsed.data.kind,
       },
     });
-    await awardPoints({
-      userId: user.id,
-      reason: "STATUS_UPDATE",
-      refType: "StatusUpdate",
-      refId: update.id,
-      tx,
-    });
+    if (earns) {
+      await awardPoints({
+        userId: user.id,
+        reason: "STATUS_UPDATE",
+        refType: "StatusUpdate",
+        refId: update.id,
+        tx,
+      });
+    }
   });
 
   revalidatePath(`/locations/${slug}`);
@@ -52,6 +63,24 @@ export async function addStatusUpdateAction(
 
 export async function toggleHelpfulAction(photoId: string, slug: string) {
   const user = await requireApproved();
+
+  const target = await prisma.photo.findUnique({
+    where: { id: photoId },
+    select: {
+      status: true,
+      locationId: true,
+      location: { select: { status: true, hidden: true } },
+    },
+  });
+  if (
+    !target ||
+    target.status !== "APPROVED" ||
+    target.location.status !== "PUBLISHED" ||
+    target.location.hidden ||
+    (await isLockedFor(target.locationId, user))
+  ) {
+    return { ok: false, error: "Photo not found" };
+  }
 
   await prisma.$transaction(async (tx) => {
     const photo = await tx.photo.findUnique({
@@ -76,12 +105,19 @@ export async function toggleHelpfulAction(photoId: string, slug: string) {
         where: { id: photoId },
         data: { helpfulCount: { increment: 1 } },
       });
-      if (photo.uploaderId !== user.id) {
+      // Award once per (voter, photo): un-voting and voting again must not
+      // mint new points.
+      const voteRef = `${photo.id}:${user.id}`;
+      const alreadyAwarded = await tx.pointsLedger.findFirst({
+        where: { reason: "HELPFUL_RECEIVED", refType: "Helpful", refId: voteRef },
+        select: { id: true },
+      });
+      if (photo.uploaderId !== user.id && !alreadyAwarded) {
         await awardPoints({
           userId: photo.uploaderId,
           reason: "HELPFUL_RECEIVED",
-          refType: "Photo",
-          refId: photo.id,
+          refType: "Helpful",
+          refId: voteRef,
           tx,
         });
       }
@@ -106,9 +142,14 @@ export async function rateLocationAction(
 
   const location = await prisma.location.findUnique({
     where: { slug },
-    select: { id: true },
+    select: { id: true, status: true, hidden: true },
   });
-  if (!location) return { ok: false, error: "Not found" };
+  if (!location || location.status !== "PUBLISHED" || location.hidden) {
+    return { ok: false, error: "Not found" };
+  }
+  if (await isLockedFor(location.id, user)) {
+    return { ok: false, error: "Location is locked" };
+  }
 
   const title = parsed.data.title?.trim() ? parsed.data.title.trim() : null;
   const body = parsed.data.body?.trim() ? parsed.data.body.trim() : null;
@@ -144,6 +185,9 @@ export async function addLocationPhotosAction(
   });
   if (!location || location.status !== "PUBLISHED" || location.hidden) {
     return { ok: false, error: "Location not found" };
+  }
+  if (await isLockedFor(location.id, user)) {
+    return { ok: false, error: "Location is locked" };
   }
 
   await prisma.photo.createMany({

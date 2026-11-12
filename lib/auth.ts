@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import { redirect } from "next/navigation";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import Email from "next-auth/providers/nodemailer";
@@ -69,7 +70,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   callbacks: {
     ...authConfig.callbacks,
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = (user as { id?: string }).id ?? token.id;
         token.role = (user as { role?: UserRole }).role ?? token.role;
@@ -77,17 +78,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.points = (user as { points?: number }).points ?? token.points;
         token.locale =
           (user as { locale?: string | null }).locale ?? token.locale;
-      } else if (token.id && (trigger === "update" || !token.role)) {
+        return token;
+      }
+      // Role, status and points live in the DB and change without the user
+      // signing in again (admin approves / bans, points are spent). Re-read
+      // them on every server-side auth() call so gating is never stale.
+      if (token.id) {
         const u = await prisma.user.findUnique({
           where: { id: token.id as string },
           select: { role: true, status: true, points: true, locale: true },
         });
-        if (u) {
-          token.role = u.role;
-          token.status = u.status;
-          token.points = u.points;
-          token.locale = u.locale;
-        }
+        if (!u) return null; // user deleted -> drop the session
+        token.role = u.role;
+        token.status = u.status;
+        token.points = u.points;
+        token.locale = u.locale;
       }
       return token;
     },
@@ -122,4 +127,19 @@ export async function requireAdmin() {
     throw err;
   }
   return user;
+}
+
+/**
+ * For server pages that need an APPROVED user. Redirects to login / pending /
+ * blocked based on the user's current DB status (see the jwt callback).
+ */
+export async function requireApprovedPage(locale: string, nextPath: string) {
+  const session = await auth();
+  if (!session?.user) {
+    redirect(`/${locale}/login?next=/${locale}${nextPath}`);
+  }
+  const { status } = session.user;
+  if (status === "PENDING") redirect(`/${locale}/pending`);
+  if (status !== "APPROVED") redirect(`/${locale}/blocked`);
+  return session.user;
 }

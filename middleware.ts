@@ -36,26 +36,9 @@ export default auth((req) => {
     return intlMiddleware(req);
   }
 
-  const status = session.user.status;
-  const role = session.user.role;
-
-  if (isAdminRoute && role !== "ADMIN") {
-    const url = req.nextUrl.clone();
-    url.pathname = `${localePrefix}/discover`;
-    url.search = "";
-    return NextResponse.redirect(url);
-  }
-
-  if (isAppRoute && status !== "APPROVED") {
-    const url = req.nextUrl.clone();
-    if (status === "PENDING") {
-      url.pathname = `${localePrefix}/pending`;
-    } else if (status === "REJECTED" || status === "BANNED") {
-      url.pathname = `${localePrefix}/blocked`;
-    }
-    url.search = "";
-    return NextResponse.redirect(url);
-  }
+  // Role/status checks are NOT done here: the edge token can be stale (an
+  // admin may have approved or banned the user since sign-in). Pages and
+  // server actions check them against the DB via lib/auth.ts.
 
   // Mirror the user's stored locale into the NEXT_LOCALE cookie when missing
   // or stale, so next-intl detects the right language on subsequent navigations.

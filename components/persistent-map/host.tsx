@@ -25,6 +25,7 @@ export function PersistentMapHost() {
   const ref = React.useRef<MapRef | null>(null);
   const [popup, setPopup] = React.useState<DiscoverItem | null>(null);
   const tCommon = useTranslations("Common");
+  const tUnlock = useTranslations("Unlock");
   const locale = useLocale();
   const [mounted, setMounted] = React.useState(false);
   const initialRef = React.useRef(state.initial);
@@ -168,7 +169,9 @@ export function PersistentMapHost() {
             closeOnClick={false}
           >
             <div className="w-48 space-y-1">
-              <div className="text-sm font-semibold">{popup.title}</div>
+              <div className="text-sm font-semibold">
+                {popup.isSecret && !popup.unlocked ? tUnlock("secretTitle") : popup.title}
+              </div>
               <div className="line-clamp-2 text-xs text-muted-foreground">
                 {popup.description}
               </div>
