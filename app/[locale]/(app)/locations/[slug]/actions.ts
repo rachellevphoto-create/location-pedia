@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateAllLocales } from "@/lib/revalidate";
 import { prisma } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
 import {
@@ -11,6 +11,7 @@ import {
   type StatusUpdateInput,
 } from "@/lib/validation";
 import {
+  awardHelpfulOnce,
   awardPoints,
   canEarnStatusUpdatePoints,
   unlockSecret,
@@ -57,7 +58,7 @@ export async function addStatusUpdateAction(
     }
   });
 
-  revalidatePath(`/locations/${slug}`);
+  revalidateAllLocales(`/locations/${slug}`);
   return { ok: true };
 }
 
@@ -105,26 +106,11 @@ export async function toggleHelpfulAction(photoId: string, slug: string) {
         where: { id: photoId },
         data: { helpfulCount: { increment: 1 } },
       });
-      // Award once per (voter, photo): un-voting and voting again must not
-      // mint new points.
-      const voteRef = `${photo.id}:${user.id}`;
-      const alreadyAwarded = await tx.pointsLedger.findFirst({
-        where: { reason: "HELPFUL_RECEIVED", refType: "Helpful", refId: voteRef },
-        select: { id: true },
-      });
-      if (photo.uploaderId !== user.id && !alreadyAwarded) {
-        await awardPoints({
-          userId: photo.uploaderId,
-          reason: "HELPFUL_RECEIVED",
-          refType: "Helpful",
-          refId: voteRef,
-          tx,
-        });
-      }
+      await awardHelpfulOnce(tx, photo, user.id);
     }
   });
 
-  revalidatePath(`/locations/${slug}`);
+  revalidateAllLocales(`/locations/${slug}`);
   return { ok: true };
 }
 
@@ -165,7 +151,7 @@ export async function rateLocationAction(
       body,
     },
   });
-  revalidatePath(`/locations/${slug}`);
+  revalidateAllLocales(`/locations/${slug}`);
   return { ok: true };
 }
 
@@ -203,8 +189,8 @@ export async function addLocationPhotosAction(
     })),
   });
 
-  revalidatePath(`/locations/${slug}`);
-  revalidatePath("/admin/submissions");
+  revalidateAllLocales(`/locations/${slug}`);
+  revalidateAllLocales("/admin/submissions");
   return { ok: true, count: parsed.data.photos.length };
 }
 
@@ -216,6 +202,6 @@ export async function unlockSecretAction(slug: string) {
   });
   if (!location) return { ok: false, error: "Not found" };
   const result = await unlockSecret(user.id, location.id);
-  revalidatePath(`/locations/${slug}`);
+  revalidateAllLocales(`/locations/${slug}`);
   return result;
 }

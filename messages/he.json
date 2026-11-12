@@ -104,10 +104,6 @@
   "Discover": {
     "loadingMap": "טוען מפה...",
     "searchPlaceholder": "חיפוש לפי שם, עיר או אזור...",
-    "filterAccessible": "נגיש",
-    "filterTransport": "תחב\"צ",
-    "filterRestroom": "שירותים",
-    "filterDrone": "מתאים לדרון",
     "filterPriceAny": "כל מחיר",
     "filterPricePaid": "בתשלום",
     "filterPriceFree": "חינם",
@@ -141,11 +137,7 @@
   "Card": {
     "noPhoto": "עדיין אין תמונה",
     "secret": "פרימיום ",
-    "transport": "תחב\"צ",
-    "accessible": "נגיש",
-    "restroom": "שירותים",
-    "paid": "בתשלום",
-    "drone": "דרון"
+    "paid": "בתשלום"
   },
   "Tags": {
     "urban": "עירוני",
@@ -264,11 +256,6 @@
     "directionsHelper": "אופציונלי. תיאור חופשי של נסיעה ברכב, חניה, תחבורה ציבורית או הליכה ברגל.",
     "styleTags": "תגיות סגנון",
 
-    "wheelchair": "ידידותי לכיסא גלגלים",
-    "publicTransport": "תחבורה ציבורית",
-    "restroom": "שירותים בקרבת מקום",
-    "changingRoom": "חדר החלפה",
-    "drone": "מתאים לדרון",
     "paidEntry": "כניסה בתשלום",
     "secretSpot": "מקום פרימיום",
 
@@ -446,9 +433,6 @@
     "locationUnhidden": "המיקום חזר להיות גלוי.",
     "locationDeleted": "המיקום נמחק.",
     "locationActionFailed": "הפעולה נכשלה.",
-    "tagAccessible": "נגיש",
-    "tagTransit": "תחב\"צ",
-    "tagRestroom": "שירותים",
     "tagPaid": "בתשלום",
     "photosCount": "{count} תמונות",
     "queueLabel": "תור בדיקה",
@@ -535,5 +519,19 @@
       "reasonPrefix": "סיבה: {reason}",
       "footer": "תמיד ניתן להגיש מיקום חדש."
     }
+  },
+  "Amenities": {
+    "wheelchair": "נגיש",
+    "publicTransport": "תחב\"צ",
+    "restroom": "שירותים",
+    "changingRoom": "חדר החלפה",
+    "drone": "מתאים לדרון"
+  },
+  "AmenitiesLong": {
+    "wheelchair": "ידידותי לכיסא גלגלים",
+    "publicTransport": "תחבורה ציבורית",
+    "restroom": "שירותים בקרבת מקום",
+    "changingRoom": "חדר החלפה",
+    "drone": "מתאים לדרון"
   }
 }

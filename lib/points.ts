@@ -37,6 +37,33 @@ export async function canEarnStatusUpdatePoints(
   return sameLocation === 0;
 }
 
+/**
+ * Give the photo's uploader HELPFUL_RECEIVED points, once per (voter, photo).
+ * Un-voting and voting again must not mint new points, and voting on your
+ * own photo earns nothing. Returns true when points were given.
+ */
+export async function awardHelpfulOnce(
+  tx: Prisma.TransactionClient,
+  photo: { id: string; uploaderId: string },
+  voterId: string,
+) {
+  if (photo.uploaderId === voterId) return false;
+  const voteRef = `${photo.id}:${voterId}`;
+  const already = await tx.pointsLedger.findFirst({
+    where: { reason: "HELPFUL_RECEIVED", refType: "Helpful", refId: voteRef },
+    select: { id: true },
+  });
+  if (already) return false;
+  await awardPoints({
+    userId: photo.uploaderId,
+    reason: "HELPFUL_RECEIVED",
+    refType: "Helpful",
+    refId: voteRef,
+    tx,
+  });
+  return true;
+}
+
 type AwardArgs = {
   userId: string;
   reason: PointsReason;

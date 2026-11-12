@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { SYSTEM_FILTERS } from "@/lib/filters";
 import { LocationRowActions } from "./location-row-actions";
 
 export const dynamic = "force-dynamic";
@@ -51,7 +52,7 @@ export default async function AdminLocationsPage({
               <tr key={l.id} className="border-t">
                 <td className="p-3 font-medium">
                   {l.title}
-                  {l.locationFilters.some((lf) => lf.filter.slug === "isSecret" && lf.boolValue) && (
+                  {l.locationFilters.some((lf) => lf.filter.slug === SYSTEM_FILTERS.isSecret && lf.boolValue) && (
                     <Badge variant="outline" className="ms-2">
                       {t("tagSecret")}
                     </Badge>

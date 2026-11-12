@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateAllLocales } from "@/lib/revalidate";
 import { getLocale } from "next-intl/server";
 import { LocationStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
@@ -86,8 +86,8 @@ export async function submitLocationAction(
     },
   });
 
-  revalidatePath("/admin/submissions");
-  revalidatePath("/admin/locations");
+  revalidateAllLocales("/admin/submissions");
+  revalidateAllLocales("/admin/locations");
   return redirect({
     href: "/submit/thanks",
     locale: locale as "he" | "en",

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateAllLocales } from "@/lib/revalidate";
 import { getLocale } from "next-intl/server";
 import { LocationStatus, UserStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
@@ -135,9 +135,9 @@ export async function updateLocationAction(
     }
   });
 
-  revalidatePath("/admin/locations");
-  revalidatePath(`/locations/${existing.slug}`);
-  revalidatePath("/discover");
+  revalidateAllLocales("/admin/locations");
+  revalidateAllLocales(`/locations/${existing.slug}`);
+  revalidateAllLocales("/discover");
 
   return { ok: true, slug: existing.slug };
 }
@@ -195,7 +195,7 @@ export async function decideUserAction(
     );
   }
 
-  revalidatePath("/admin/users");
+  revalidateAllLocales("/admin/users");
   return {
     ok: true,
     emailSent: emailResult.ok,
@@ -231,9 +231,9 @@ export async function setLocationHiddenAction(id: string, hidden: boolean) {
     data: { hidden },
   });
 
-  revalidatePath("/admin/locations");
-  revalidatePath("/discover");
-  revalidatePath(`/locations/${existing.slug}`);
+  revalidateAllLocales("/admin/locations");
+  revalidateAllLocales("/discover");
+  revalidateAllLocales(`/locations/${existing.slug}`);
   return { ok: true };
 }
 
@@ -247,9 +247,9 @@ export async function deleteLocationAction(id: string) {
 
   await prisma.location.delete({ where: { id } });
 
-  revalidatePath("/admin/locations");
-  revalidatePath("/discover");
-  revalidatePath(`/locations/${existing.slug}`);
+  revalidateAllLocales("/admin/locations");
+  revalidateAllLocales("/discover");
+  revalidateAllLocales(`/locations/${existing.slug}`);
   return { ok: true };
 }
 
@@ -365,8 +365,8 @@ export async function decideLocationAction(
     }).catch(() => null);
   }
 
-  revalidatePath("/admin/submissions");
-  revalidatePath("/admin/locations");
+  revalidateAllLocales("/admin/submissions");
+  revalidateAllLocales("/admin/locations");
   return { ok: true };
 }
 
@@ -412,11 +412,11 @@ export async function decidePhotoAction(photoId: string, raw: unknown) {
     });
   }
 
-  revalidatePath("/admin/photos");
-  revalidatePath("/admin/submissions");
+  revalidateAllLocales("/admin/photos");
+  revalidateAllLocales("/admin/submissions");
   if (photo.location.slug) {
-    revalidatePath(`/locations/${photo.location.slug}`);
+    revalidateAllLocales(`/locations/${photo.location.slug}`);
   }
-  revalidatePath("/discover");
+  revalidateAllLocales("/discover");
   return { ok: true };
 }

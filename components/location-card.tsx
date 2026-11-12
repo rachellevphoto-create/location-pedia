@@ -1,10 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Bus, Coins, Lock, Navigation, ShowerHead, Star, Users } from "lucide-react";
+import { Coins, Lock, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { FavoriteButton } from "@/components/favorite-button";
 import { formatDistanceKm } from "@/lib/utils";
+import { amenityIcon, filterLabel } from "@/lib/filter-ui";
 import type { DiscoverItem } from "@/lib/api-types";
 
 export function LocationCard({
@@ -17,13 +18,10 @@ export function LocationCard({
   const t = useTranslations("Card");
   const tTags = useTranslations("Tags");
   const tUnlock = useTranslations("Unlock");
-  const tagLabels = item.styleTags.slice(0, 3).map((tag) => {
-    try {
-      return tTags(tag as any);
-    } catch {
-      return tag;
-    }
-  });
+  const tAmenity = useTranslations("Amenities");
+  const tagLabels = item.styleTags
+    .slice(0, 3)
+    .map((tag) => filterLabel(tTags, tag));
   const locked = item.isSecret && !item.unlocked;
   const title = locked ? tUnlock("secretTitle") : item.title;
 
@@ -91,18 +89,11 @@ export function LocationCard({
           </p>
         )}
         <div className="flex items-center gap-2 pt-1 text-muted-foreground">
-          {item.publicTransport && (
-            <Bus className="h-4 w-4" aria-label={t("transport")} />
-          )}
-          {item.wheelchair && (
-            <Users className="h-4 w-4" aria-label={t("accessible")} />
-          )}
-          {item.restroom && (
-            <ShowerHead className="h-4 w-4" aria-label={t("restroom")} />
-          )}
-          {item.drone && (
-            <Navigation className="h-4 w-4" aria-label={t("drone")} />
-          )}
+          {item.amenities.map((slug) => {
+            const Icon = amenityIcon(slug);
+            const label = filterLabel(tAmenity, slug);
+            return <Icon key={slug} className="h-4 w-4" aria-label={label} />;
+          })}
           {item.paid && <Coins className="h-4 w-4" aria-label={t("paid")} />}
         </div>
       </div>

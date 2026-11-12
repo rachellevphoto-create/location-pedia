@@ -4,17 +4,12 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import {
-  Bus,
   Check,
   ChevronLeft,
   ChevronRight,
   Coins,
   Loader2,
-  Navigation,
-  Shirt,
-  ShowerHead,
   Sparkles,
-  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +19,8 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { MapPicker } from "@/components/map-picker";
 import { PhotoUploader, type UploadedPhoto } from "@/components/photo-uploader";
-import { STYLE_TAGS } from "@/lib/validation";
+import { amenityIcon, filterLabel } from "@/lib/filter-ui";
+import type { FilterOptions } from "@/lib/filters";
 import { submitLocationAction } from "./actions";
 import type { FilterEntry } from "@/lib/validation";
 
@@ -34,11 +30,8 @@ type WizardData = {
   directions: string;
   coords: { lat: number; lng: number } | null;
   styleTags: string[];
-  wheelchair: boolean;
-  publicTransport: boolean;
-  restroom: boolean;
-  changingRoom: boolean;
-  drone: boolean;
+  /** AMENITY slugs that are on. */
+  amenities: string[];
   paid: boolean;
   priceMin: string;
   priceMax: string;
@@ -53,11 +46,7 @@ const initial: WizardData = {
   directions: "",
   coords: null,
   styleTags: [],
-  wheelchair: false,
-  publicTransport: false,
-  restroom: false,
-  changingRoom: false,
-  drone: false,
+  amenities: [],
   paid: false,
   priceMin: "",
   priceMax: "",
@@ -74,11 +63,9 @@ const PHOTO_POINTS = 20;
 
 function buildFilters(data: WizardData): FilterEntry[] {
   const entries: FilterEntry[] = [];
-  if (data.wheelchair) entries.push({ slug: "wheelchair", boolValue: true });
-  if (data.publicTransport) entries.push({ slug: "publicTransport", boolValue: true });
-  if (data.restroom) entries.push({ slug: "restroom", boolValue: true });
-  if (data.changingRoom) entries.push({ slug: "changingRoom", boolValue: true });
-  if (data.drone) entries.push({ slug: "drone", boolValue: true });
+  for (const slug of data.amenities) {
+    entries.push({ slug, boolValue: true });
+  }
   if (data.paid) entries.push({ slug: "paid", boolValue: true });
   if (data.priceMin) entries.push({ slug: "priceMin", boolValue: true, numValue: Number(data.priceMin) });
   if (data.priceMax) entries.push({ slug: "priceMax", boolValue: true, numValue: Number(data.priceMax) });
@@ -89,11 +76,18 @@ function buildFilters(data: WizardData): FilterEntry[] {
   return entries;
 }
 
-export function SubmitWizard({ isAdmin = false }: { isAdmin?: boolean } = {}) {
+export function SubmitWizard({
+  isAdmin = false,
+  filterOptions,
+}: {
+  isAdmin?: boolean;
+  filterOptions: FilterOptions;
+}) {
   const router = useRouter();
   const t = useTranslations("Submit");
   const tv = useTranslations("Submit.validation");
   const tTags = useTranslations("Tags");
+  const tAmenity = useTranslations("AmenitiesLong");
   const tCommon = useTranslations("Common");
   const [data, setData] = React.useState<WizardData>(initial);
   const [step, setStep] = React.useState<number>(0);
@@ -103,6 +97,15 @@ export function SubmitWizard({ isAdmin = false }: { isAdmin?: boolean } = {}) {
 
   function update<K extends keyof WizardData>(key: K, value: WizardData[K]) {
     setData((d) => ({ ...d, [key]: value }));
+  }
+
+  function toggleAmenity(slug: string, on: boolean) {
+    update(
+      "amenities",
+      on
+        ? [...data.amenities.filter((a) => a !== slug), slug]
+        : data.amenities.filter((a) => a !== slug),
+    );
   }
 
   function toggleTag(tag: string) {
@@ -350,7 +353,7 @@ export function SubmitWizard({ isAdmin = false }: { isAdmin?: boolean } = {}) {
                   {t("styleTags")}
                 </legend>
                 <div className="flex flex-wrap gap-2">
-                  {STYLE_TAGS.map((tag) => {
+                  {filterOptions.styles.map((tag) => {
                     const on = data.styleTags.includes(tag);
                     return (
                       <button
@@ -365,7 +368,7 @@ export function SubmitWizard({ isAdmin = false }: { isAdmin?: boolean } = {}) {
                             : "bg-background hover:bg-muted",
                         )}
                       >
-                        {tTags(tag)}
+                        {filterLabel(tTags, tag)}
                       </button>
                     );
                   })}
@@ -377,36 +380,18 @@ export function SubmitWizard({ isAdmin = false }: { isAdmin?: boolean } = {}) {
                   {t("amenitiesLegend")}
                 </legend>
                 <div className="grid gap-2.5 sm:grid-cols-2">
-                  <Toggle
-                    icon={<Users className="h-4 w-4" />}
-                    label={t("wheelchair")}
-                    checked={data.wheelchair}
-                    onChange={(v) => update("wheelchair", v)}
-                  />
-                  <Toggle
-                    icon={<Bus className="h-4 w-4" />}
-                    label={t("publicTransport")}
-                    checked={data.publicTransport}
-                    onChange={(v) => update("publicTransport", v)}
-                  />
-                  <Toggle
-                    icon={<ShowerHead className="h-4 w-4" />}
-                    label={t("restroom")}
-                    checked={data.restroom}
-                    onChange={(v) => update("restroom", v)}
-                  />
-                  <Toggle
-                    icon={<Shirt className="h-4 w-4" />}
-                    label={t("changingRoom")}
-                    checked={data.changingRoom}
-                    onChange={(v) => update("changingRoom", v)}
-                  />
-                  <Toggle
-                    icon={<Navigation className="h-4 w-4" />}
-                    label={t("drone")}
-                    checked={data.drone}
-                    onChange={(v) => update("drone", v)}
-                  />
+                  {filterOptions.amenities.map((slug) => {
+                    const Icon = amenityIcon(slug);
+                    return (
+                      <Toggle
+                        key={slug}
+                        icon={<Icon className="h-4 w-4" />}
+                        label={filterLabel(tAmenity, slug)}
+                        checked={data.amenities.includes(slug)}
+                        onChange={(v) => toggleAmenity(slug, v)}
+                      />
+                    );
+                  })}
                   <Toggle
                     icon={<Coins className="h-4 w-4" />}
                     label={t("paidEntry")}
@@ -544,7 +529,7 @@ export function SubmitWizard({ isAdmin = false }: { isAdmin?: boolean } = {}) {
                       key={tag}
                       className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
                     >
-                      {tTags(tag)}
+                      {filterLabel(tTags, tag)}
                     </span>
                   ))}
                 </div>

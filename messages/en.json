@@ -104,10 +104,6 @@
   "Discover": {
     "loadingMap": "Loading map...",
     "searchPlaceholder": "Search by name, city, or area...",
-    "filterAccessible": "Accessible",
-    "filterTransport": "Transport",
-    "filterRestroom": "Restroom",
-    "filterDrone": "Drone-friendly",
     "filterPriceAny": "Any price",
     "filterPricePaid": "Paid only",
     "filterPriceFree": "Free only",
@@ -141,11 +137,7 @@
   "Card": {
     "noPhoto": "No photo yet",
     "secret": "Premium",
-    "transport": "Transport",
-    "accessible": "Accessible",
-    "restroom": "Restroom",
-    "paid": "Paid",
-    "drone": "Drone"
+    "paid": "Paid"
   },
   "Tags": {
     "urban": "urban",
@@ -264,11 +256,6 @@
     "directionsHelper": "Optional. Free-form notes about driving, parking, public transport, or walking access.",
     "styleTags": "Style tags",
 
-    "wheelchair": "Wheelchair friendly",
-    "publicTransport": "Public transport",
-    "restroom": "Restroom nearby",
-    "changingRoom": "Changing room",
-    "drone": "Drone-friendly",
     "paidEntry": "Paid entry",
     "secretSpot": "Premium spot",
 
@@ -446,9 +433,6 @@
     "locationUnhidden": "Location is visible again.",
     "locationDeleted": "Location deleted.",
     "locationActionFailed": "Action failed.",
-    "tagAccessible": "accessible",
-    "tagTransit": "transit",
-    "tagRestroom": "restroom",
     "tagPaid": "paid",
     "photosCount": "{count} photos",
     "queueLabel": "Review queue",
@@ -535,5 +519,19 @@
       "reasonPrefix": "Reason: {reason}",
       "footer": "You can submit a new location any time."
     }
+  },
+  "Amenities": {
+    "wheelchair": "Accessible",
+    "publicTransport": "Transport",
+    "restroom": "Restroom",
+    "changingRoom": "Changing room",
+    "drone": "Drone-friendly"
+  },
+  "AmenitiesLong": {
+    "wheelchair": "Wheelchair friendly",
+    "publicTransport": "Public transport",
+    "restroom": "Restroom nearby",
+    "changingRoom": "Changing room",
+    "drone": "Drone-friendly"
   }
 }
