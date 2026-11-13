@@ -1,0 +1,11 @@
+# Never upload local secrets or tooling to Vercel. Env vars live in the
+# Vercel project settings.
+.env
+.env.*
+!.env.example
+.cabundle.pem
+.claude
+.cursor
+.vscode
+tests
+scripts/setup-test-db.sh

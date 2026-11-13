@@ -62,7 +62,7 @@ Open http://localhost:3000.
 
 ### 3. Cloudinary watermark asset
 
-Upload a transparent PNG (your logo) to Cloudinary and copy its public ID into `CLOUDINARY_WATERMARK_PUBLIC_ID`. The default is `locatepedia/watermark`. Inspiration-tab photos render with this overlay automatically via Cloudinary URL transforms; Technical-tab photos render raw.
+Upload a transparent PNG (your logo) to Cloudinary and copy its public ID into `CLOUDINARY_WATERMARK_PUBLIC_ID` (e.g. `locatepedia/watermark`). Leave it empty for no watermark: an ID that does not exist in Cloudinary makes every Inspiration image fail. Inspiration-tab photos render with this overlay automatically via Cloudinary URL transforms; Technical-tab photos render raw.
 
 ### 4. Tests
 
