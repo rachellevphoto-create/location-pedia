@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Award, MapPin, PlusCircle, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { BrandMark } from "@/components/brand-mark";
 
 export async function SiteNav() {
   const session = await auth();
@@ -18,9 +19,13 @@ export async function SiteNav() {
       <div className="container flex h-14 items-center justify-between gap-4">
         <Link
           href={user ? "/discover" : "/"}
-          className="text-lg font-bold tracking-tight"
+          className="brand-logo group flex items-center gap-2"
+          dir="ltr"
         >
-          {tCommon("appName")}
+          <BrandMark className="h-7" />
+          <span className="font-display text-2xl font-bold uppercase leading-none tracking-wide">
+            {tCommon("appName")}
+          </span>
         </Link>
 
         <nav className="flex items-center gap-2 text-sm">

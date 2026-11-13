@@ -3,8 +3,9 @@
 import * as React from "react";
 import Map, { Marker, NavigationControl, type MapRef } from "react-map-gl";
 import { useLocale, useTranslations } from "next-intl";
-import { MapPin } from "lucide-react";
 import { applyMapLanguage } from "@/lib/map-language";
+import { MAP_STYLE, applyBrandMapStyle } from "@/lib/map-style";
+import { MapPinIcon } from "@/components/map-pin";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
@@ -42,9 +43,18 @@ export function MapPicker({
             longitude: initial.lng,
             zoom: 12,
           }}
-          mapStyle="mapbox://styles/mapbox/streets-v12"
-          onLoad={(e) => applyMapLanguage(e.target, locale)}
-          onStyleData={() => { const m = mapRef.current?.getMap(); if (m) applyMapLanguage(m, locale); }}
+          mapStyle={MAP_STYLE}
+          onLoad={(e) => {
+            applyMapLanguage(e.target, locale);
+            applyBrandMapStyle(e.target);
+          }}
+          onStyleData={() => {
+            const m = mapRef.current?.getMap();
+            if (m) {
+              applyMapLanguage(m, locale);
+              applyBrandMapStyle(m);
+            }
+          }}
           onClick={(e) => onChange({ lat: e.lngLat.lat, lng: e.lngLat.lng })}
           style={{ width: "100%", height: "100%" }}
         >
@@ -53,12 +63,13 @@ export function MapPicker({
             <Marker
               latitude={value.lat}
               longitude={value.lng}
+              anchor="bottom"
               draggable
               onDragEnd={(e) =>
                 onChange({ lat: e.lngLat.lat, lng: e.lngLat.lng })
               }
             >
-              <MapPin className="h-7 w-7 text-primary drop-shadow" />
+              <MapPinIcon key={`${value.lat},${value.lng}`} />
             </Marker>
           )}
         </Map>

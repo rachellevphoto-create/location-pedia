@@ -299,7 +299,7 @@ export function DiscoverClient({
   }
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col">
+    <div className="flex h-[calc(100vh-6rem)] flex-col">
       <div className="border-b bg-card">
         <div className="container flex flex-wrap items-center gap-2.5 py-3.5">
           <form
@@ -413,7 +413,7 @@ export function DiscoverClient({
             {chips.map((c) => (
               <span
                 key={c.key}
-                className="inline-flex items-center gap-1 rounded-full bg-muted py-1 pe-1 ps-3"
+                className="chip-enter inline-flex items-center gap-1 rounded-full bg-muted py-1 pe-1 ps-3"
               >
                 {c.label}
                 <button
@@ -460,8 +460,8 @@ export function DiscoverClient({
                 <EmptyState />
               ) : (
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-x-4 gap-y-7">
-                  {items.map((it) => (
-                    <LocationCard key={it.id} item={it} loggedIn={loggedIn} />
+                  {items.map((it, i) => (
+                    <LocationCard key={it.id} item={it} loggedIn={loggedIn} index={i} />
                   ))}
                 </div>
               )}

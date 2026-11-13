@@ -3,10 +3,11 @@
 import * as React from "react";
 import Map, { Marker, NavigationControl, Popup, type MapRef } from "react-map-gl";
 import { useLocale, useTranslations } from "next-intl";
-import { Lock, MapPin } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { DiscoverItem } from "@/lib/api-types";
 import { applyMapLanguage } from "@/lib/map-language";
+import { MAP_STYLE, applyBrandMapStyle } from "@/lib/map-style";
+import { MapPinIcon } from "@/components/map-pin";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
@@ -53,9 +54,18 @@ export function DiscoverMap({
         longitude: initial?.lng ?? 34.7818,
         zoom: initial?.zoom ?? 11,
       }}
-      mapStyle="mapbox://styles/mapbox/streets-v12"
-      onLoad={(e) => applyMapLanguage(e.target, locale)}
-      onStyleData={() => { const m = ref.current?.getMap(); if (m) applyMapLanguage(m, locale); }}
+      mapStyle={MAP_STYLE}
+      onLoad={(e) => {
+        applyMapLanguage(e.target, locale);
+        applyBrandMapStyle(e.target);
+      }}
+      onStyleData={() => {
+        const m = ref.current?.getMap();
+        if (m) {
+          applyMapLanguage(m, locale);
+          applyBrandMapStyle(m);
+        }
+      }}
       onMoveEnd={(e) => {
         const b = e.target.getBounds();
         if (!b) return;
@@ -74,24 +84,13 @@ export function DiscoverMap({
           key={it.id}
           latitude={it.latitude}
           longitude={it.longitude}
+          anchor="bottom"
           onClick={(e) => {
             e.originalEvent.stopPropagation();
             setPopup(it);
           }}
         >
-          <div
-            className={`flex h-9 w-9 -translate-y-2 items-center justify-center rounded-full border-2 border-white shadow-md ${
-              it.isSecret && !it.unlocked
-                ? "bg-foreground text-lime"
-                : "bg-primary text-white"
-            }`}
-          >
-            {it.isSecret && !it.unlocked ? (
-              <Lock className="h-4 w-4" />
-            ) : (
-              <MapPin className="h-4 w-4" />
-            )}
-          </div>
+          <MapPinIcon locked={it.isSecret && !it.unlocked} />
         </Marker>
       ))}
       {popup && (

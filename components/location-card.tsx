@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useTranslations } from "next-intl";
 import { Coins, Lock, Star } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -7,14 +8,21 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { formatDistanceKm } from "@/lib/utils";
 import { amenityIcon, filterLabel } from "@/lib/filter-ui";
 import type { DiscoverItem } from "@/lib/api-types";
+import { useMapHighlight } from "@/components/persistent-map/provider";
 
 export function LocationCard({
   item,
   loggedIn,
+  index = 0,
 }: {
   item: DiscoverItem;
   loggedIn: boolean;
+  /** Position in the list; staggers the slide-in. */
+  index?: number;
 }) {
+  const setHighlight = useMapHighlight();
+  // Leaving the page (e.g. clicking the card) must not leave a pin pulsing.
+  React.useEffect(() => () => setHighlight(null), [setHighlight]);
   const t = useTranslations("Card");
   const tTags = useTranslations("Tags");
   const tUnlock = useTranslations("Unlock");
@@ -28,9 +36,14 @@ export function LocationCard({
   return (
     <Link
       href={`/locations/${item.slug}` as any}
-      className="group block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4"
+      className="card-enter group block min-w-0 rounded-xl transition-transform duration-200 hover:-translate-y-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4"
+      style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+      onMouseEnter={() => setHighlight(item.id)}
+      onMouseLeave={() => setHighlight(null)}
+      onFocus={() => setHighlight(item.id)}
+      onBlur={() => setHighlight(null)}
     >
-      <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl bg-muted">
+      <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl bg-muted shadow-sm transition-shadow duration-200 group-hover:shadow-lg">
         {item.hero ? (
           <img
             src={item.hero}
