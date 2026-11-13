@@ -3,8 +3,9 @@ import { v2 as cloudinary } from "cloudinary";
 const cloudName = process.env.CLOUDINARY_CLOUD_NAME ?? "";
 const apiKey = process.env.CLOUDINARY_API_KEY ?? "";
 const apiSecret = process.env.CLOUDINARY_API_SECRET ?? "";
-const watermarkPublicId =
-  process.env.CLOUDINARY_WATERMARK_PUBLIC_ID ?? "locatepedia/watermark";
+// No watermark unless one is configured: an overlay that does not exist in
+// Cloudinary makes the whole image fail (HTTP 400).
+const watermarkPublicId = process.env.CLOUDINARY_WATERMARK_PUBLIC_ID ?? "";
 const folder = process.env.CLOUDINARY_UPLOAD_FOLDER ?? "locatepedia";
 
 if (cloudName) {
