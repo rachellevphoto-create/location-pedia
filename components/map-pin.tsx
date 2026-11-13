@@ -41,3 +41,26 @@ export function MapPinIcon({
     </div>
   );
 }
+
+/**
+ * Count bubble for a group of nearby pins. Grows a little with the count.
+ * Animations in globals.css (.map-cluster*).
+ */
+export function MapClusterIcon({
+  count,
+  highlighted = false,
+}: {
+  count: number;
+  highlighted?: boolean;
+}) {
+  const size = Math.round(Math.min(64, 34 + Math.log2(count) * 6));
+  return (
+    <div
+      className="map-cluster"
+      data-highlight={highlighted || undefined}
+      style={{ width: size, height: size }}
+    >
+      <span className="map-cluster-count">{count}</span>
+    </div>
+  );
+}

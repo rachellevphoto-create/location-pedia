@@ -12,7 +12,8 @@ import { Link } from "@/i18n/navigation";
 import type { DiscoverItem } from "@/lib/api-types";
 import { applyMapLanguage } from "@/lib/map-language";
 import { MAP_STYLE, applyBrandMapStyle } from "@/lib/map-style";
-import { MapPinIcon } from "@/components/map-pin";
+import { MapClusterIcon, MapPinIcon } from "@/components/map-pin";
+import { MAX_ZOOM, useClusters, type MapView } from "./use-clusters";
 import {
   usePersistentMapContext,
   usePersistentMapState,
@@ -27,10 +28,40 @@ export function PersistentMapHost() {
   const [popup, setPopup] = React.useState<DiscoverItem | null>(null);
   const tCommon = useTranslations("Common");
   const tUnlock = useTranslations("Unlock");
+  const tMap = useTranslations("Map");
   const locale = useLocale();
   const [mounted, setMounted] = React.useState(false);
   const initialRef = React.useRef(state.initial);
   const onMoveEndRef = React.useRef(state.onMoveEnd);
+  // Current bounds + zoom, used to group nearby pins into count bubbles.
+  const [view, setView] = React.useState<MapView | null>(null);
+  // Bubble whose places all sit on one point: shown as a list.
+  const [group, setGroup] = React.useState<{
+    lat: number;
+    lng: number;
+    items: DiscoverItem[];
+  } | null>(null);
+  const viewRaf = React.useRef<number | null>(null);
+  const updateView = React.useCallback(() => {
+    if (viewRaf.current != null) return;
+    viewRaf.current = requestAnimationFrame(() => {
+      viewRaf.current = null;
+      const map = ref.current?.getMap();
+      const b = map?.getBounds();
+      if (!map || !b) return;
+      setView({
+        bounds: [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()],
+        zoom: map.getZoom(),
+      });
+    });
+  }, []);
+  React.useEffect(
+    () => () => {
+      if (viewRaf.current != null) cancelAnimationFrame(viewRaf.current);
+    },
+    [],
+  );
+  const nodes = useClusters(state.items, view);
 
   React.useEffect(() => {
     setMounted(true);
@@ -64,10 +95,11 @@ export function PersistentMapHost() {
           map.resize();
         } catch {
         }
+        updateView();
       }
     });
     return () => registerHostResize(null);
-  }, [registerHostResize]);
+  }, [registerHostResize, updateView]);
 
   React.useEffect(() => {
     const map = ref.current?.getMap();
@@ -80,6 +112,7 @@ export function PersistentMapHost() {
       setPopup(null);
     }
   }, [state.items, popup]);
+  React.useEffect(() => setGroup(null), [state.items]);
 
   if (!TOKEN || !mounted) return null;
 
@@ -122,7 +155,9 @@ export function PersistentMapHost() {
         onLoad={(e) => {
           applyMapLanguage(e.target, locale);
           applyBrandMapStyle(e.target);
+          updateView();
         }}
+        onMove={updateView}
         onStyleData={() => {
           const m = ref.current?.getMap();
           if (m) {
@@ -145,30 +180,94 @@ export function PersistentMapHost() {
         style={{ width: "100%", height: "100%" }}
       >
         <NavigationControl position="top-right" />
-        {state.items.map((it, i) => (
-          <Marker
-            key={it.id}
-            latitude={it.latitude}
-            longitude={it.longitude}
-            anchor="bottom"
-            onClick={(e) => {
-              e.originalEvent.stopPropagation();
-              setPopup(it);
-              // Glide to the pin instead of jumping.
-              ref.current?.easeTo({
-                center: [it.longitude, it.latitude],
-                duration: 700,
-                essential: false,
-              });
-            }}
+        {nodes.map((node, i) =>
+          node.kind === "cluster" ? (
+            <Marker
+              key={node.key}
+              latitude={node.lat}
+              longitude={node.lng}
+              anchor="center"
+              onClick={(e) => {
+                e.originalEvent.stopPropagation();
+                setPopup(null);
+                if (node.samePoint) {
+                  // Can't split by zooming: list the places instead.
+                  const ids = new Set(node.ids);
+                  setGroup({
+                    lat: node.lat,
+                    lng: node.lng,
+                    items: state.items.filter((it) => ids.has(it.id)),
+                  });
+                  return;
+                }
+                setGroup(null);
+                ref.current?.easeTo({
+                  center: [node.lng, node.lat],
+                  zoom: Math.min(node.expansionZoom, MAX_ZOOM),
+                  duration: 650,
+                });
+              }}
+            >
+              <MapClusterIcon
+                count={node.count}
+                highlighted={!!state.highlightId && node.ids.includes(state.highlightId)}
+              />
+            </Marker>
+          ) : (
+            <Marker
+              key={node.key}
+              latitude={node.lat}
+              longitude={node.lng}
+              anchor="bottom"
+              onClick={(e) => {
+                e.originalEvent.stopPropagation();
+                setGroup(null);
+                setPopup(node.item);
+                // Glide to the pin instead of jumping.
+                ref.current?.easeTo({
+                  center: [node.lng, node.lat],
+                  duration: 700,
+                  essential: false,
+                });
+              }}
+            >
+              <MapPinIcon
+                locked={node.item.isSecret && !node.item.unlocked}
+                highlighted={state.highlightId === node.item.id}
+                index={i}
+              />
+            </Marker>
+          ),
+        )}
+        {group && (
+          <Popup
+            latitude={group.lat}
+            longitude={group.lng}
+            anchor="top"
+            offset={24}
+            onClose={() => setGroup(null)}
+            closeOnClick={false}
+            maxWidth="260px"
           >
-            <MapPinIcon
-              locked={it.isSecret && !it.unlocked}
-              highlighted={state.highlightId === it.id}
-              index={i}
-            />
-          </Marker>
-        ))}
+            <div className="w-56">
+              <div className="mb-1.5 text-xs font-semibold text-muted-foreground">
+                {tMap("samePlaceCount", { count: group.items.length })}
+              </div>
+              <ul className="max-h-56 space-y-1 overflow-y-auto">
+                {group.items.map((it) => (
+                  <li key={it.id}>
+                    <Link
+                      href={`/locations/${it.slug}` as any}
+                      className="block rounded-md px-1.5 py-1 text-sm hover:bg-muted"
+                    >
+                      {it.isSecret && !it.unlocked ? tUnlock("secretTitle") : it.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Popup>
+        )}
         {popup && (
           <Popup
             latitude={popup.latitude}

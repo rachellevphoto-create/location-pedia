@@ -86,7 +86,9 @@ export function parseFilterRow(row: DiscoverRow): LocationFilterMap {
 export async function searchLocations(
   filters: DiscoverFilters,
 ): Promise<DiscoverRow[]> {
-  const limit = Math.min(Math.max(filters.limit ?? 60, 1), 200);
+  // The map clusters pins on the client, so send every match in view (the
+  // old default of 60 silently hid the rest and the count said "60").
+  const limit = Math.min(Math.max(filters.limit ?? 500, 1), 1000);
 
   const fromLng = filters.from?.lng ?? null;
   const fromLat = filters.from?.lat ?? null;

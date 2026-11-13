@@ -127,6 +127,7 @@
     "resizeMap": "Resize map. Drag, or use the arrow keys. Double-click to reset."
   },
   "Map": {
+    "samePlaceCount": "{count, plural, one {# place} other {# places}} at this spot",
     "tokenMissing": "Set NEXT_PUBLIC_MAPBOX_TOKEN to enable the map.",
     "tokenMissingHelp": "Set the NEXT_PUBLIC_MAPBOX_TOKEN environment variable to render the interactive map.",
     "manualHelp": "Mapbox is not configured. Enter coordinates manually:",
