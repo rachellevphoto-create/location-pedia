@@ -1,5 +1,6 @@
 import { setRequestLocale } from "next-intl/server";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { PersistentMapProvider } from "@/components/persistent-map/provider";
 import { PersistentMapHost } from "@/components/persistent-map/host";
 
@@ -17,6 +18,7 @@ export default async function AppLayout({
       <div className="flex min-h-screen flex-col">
         <SiteNav />
         <main className="flex-1">{children}</main>
+        <SiteFooter />
       </div>
       <PersistentMapHost />
     </PersistentMapProvider>

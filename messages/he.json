@@ -16,7 +16,7 @@
     "reject": "דחייה",
     "ban": "חסימה",
     "delete": "מחיקה",
-    "loading": "טוען...",
+    "loading": "רגע, מפתחים...",
     "tryAgain": "נסה שוב",
     "openIn": "פתח ב-",
     "view": "צפייה",
@@ -102,7 +102,7 @@
     }
   },
   "Discover": {
-    "loadingMap": "טוען מפה...",
+    "loadingMap": "פורשים את המפה...",
     "searchPlaceholder": "חיפוש לפי שם, עיר או אזור...",
     "filterPriceAny": "כל מחיר",
     "filterPricePaid": "בתשלום",
@@ -119,9 +119,9 @@
     "viewSplit": "מפוצל",
     "viewList": "רשימה",
     "viewMap": "מפה",
-    "loadingResults": "טוען...",
+    "loadingResults": "מחפשים פריימים...",
     "resultsCount": "{count, plural, =0 {אין מיקומים} one {מיקום אחד} two {שני מיקומים} other {# מיקומים}}",
-    "emptyState": "אין מיקומים שתואמים את הסינון.",
+    "emptyState": "לא מצאנו מקום שמתאים לכל הסינונים. נסו להוריד פילטר או להזיז את המפה.",
     "viewLabel": "תצוגה",
     "removeFilter": "הסרת {label}",
     "resizeMap": "שינוי גודל המפה. גררו, או השתמשו בחיצים. לחיצה כפולה לאיפוס."
@@ -135,7 +135,7 @@
     "pickerHelp": "לחצו על המפה כדי לסמן מיקום, או גררו את הסיכה הקיימת לכוונון עדין."
   },
   "Card": {
-    "noPhoto": "עדיין אין תמונה",
+    "noPhoto": "מחכה לפריים הראשון",
     "secret": "פרימיום ",
     "paid": "בתשלום"
   },
@@ -186,7 +186,7 @@
     "no": "לא"
   },
   "Gallery": {
-    "noPhotos": "אין עדיין תמונות בגלריה זו.",
+    "noPhotos": "עוד אין פה תמונות. תהיו הראשונים לצלם?",
     "signInToVote": "התחברו כדי להצביע מועיל.",
     "signInRequired": "נדרשת התחברות"
   },
@@ -197,7 +197,7 @@
     "posted": "העדכון פורסם",
     "pointsAwarded": "+10 נקודות",
     "couldNotPost": "לא ניתן היה לפרסם",
-    "noUpdates": "אין עדיין עדכונים. היו הראשונים לפרסם.",
+    "noUpdates": "שקט פה. ביקרתם לאחרונה? ספרו מה המצב.",
     "verified": "מאומת",
     "kind": {
       "BLOOM": "פריחה",
@@ -210,7 +210,7 @@
   },
   "Rating": {
     "yourRating": "הדירוג והביקורת שלך",
-    "thanks": "תודה!",
+    "thanks": "תודה! עזרתם לצלם הבא.",
     "ratedStars": "דירגתם {n} כוכבים.",
     "couldNotSave": "לא ניתן היה לשמור דירוג",
     "needsApprovedAccount": "התחברו עם חשבון מאושר כדי לדרג.",
@@ -222,7 +222,7 @@
     "updateReview": "עדכון ביקורת",
     "allReviews": "ביקורות",
     "allReviewsCount": "ביקורות ({count})",
-    "noReviews": "אין עדיין ביקורות. היו הראשונים.",
+    "noReviews": "עוד אין ביקורות. מה דעתכם על המקום?",
     "yourReviewBadge": "הביקורת שלך"
   },
   "Unlock": {
@@ -233,7 +233,7 @@
     "unlockedDescription": "הקואורדינטות נחשפו.",
     "couldNotUnlock": "לא ניתן היה לפתוח",
     "unlockFor": "פתחו עבור {cost} נקודות",
-    "notEnoughPoints": "אין מספיק נקודות"
+    "notEnoughPoints": "עוד קצת נקודות וזה שלכם"
   },
   "Submit": {
     "title": "הוספת מיקום",
@@ -267,7 +267,7 @@
     "technicalLabel": "תמונות טכניות / מאחורי הקלעים",
     "technicalHelper": "תמונות רחבות של השטח האמיתי כדי שאחרים ידעו למה לצפות.",
     "submitForReview": "שליחה לבדיקה",
-    "submissionFailed": "השליחה נכשלה",
+    "submissionFailed": "אופס, השליחה לא עברה",
     "tryAgain": "נסו שוב",
 
     "validation": {
@@ -284,8 +284,8 @@
       "review": "אנא בדקו את הטופס."
     },
 
-    "thanksTitle": "ההגשה התקבלה",
-    "thanksDescription": "תודה על התרומה ל-LocatePedia. מנהל יבדוק את ההגשה בקרוב. תקבלו הודעת אימייל כשהיא תפורסם.",
+    "thanksTitle": "קיבלנו, תודה!",
+    "thanksDescription": "עוד מקום טוב על המפה. אנחנו עוברים על ההגשה, ונשלח לכם מייל ברגע שהיא באוויר.",
     "thanksBackToDiscover": "חזרה לגילוי",
     "thanksSubmitAnother": "הוסיפו עוד מיקום",
     "stepsLabel": "שלבים",
@@ -299,7 +299,7 @@
     "addPhotos": "הוספת תמונות",
     "uploading": "מעלה...",
     "chooseFiles": "בחירת קבצים",
-    "uploadFailed": "ההעלאה נכשלה",
+    "uploadFailed": "התמונה לא עלתה. ננסה שוב?",
     "uploadFailedDescription": "לא ניתן היה להעלות את התמונה.",
     "removePhoto": "הסר תמונה",
     "uploadedPhotoAlt": "תמונה שהועלתה"
@@ -312,7 +312,7 @@
     "submitOne": "הגישו את הראשון",
     "recentPointsTitle": "נקודות אחרונות",
     "recentPointsDescription": "20 פעולות אחרונות",
-    "noActivity": "עדיין אין פעילות.",
+    "noActivity": "עוד לא יצאתם לצלם? המפה מחכה.",
     "memberSince": "חבר/ה מאז {date}",
     "spotsCount": "{count, plural, one {מקום אחד} other {# מקומות}}",
     "photosCount": "{count, plural, one {תמונה אחת} other {# תמונות}}",
@@ -462,7 +462,7 @@
   },
   "Errors": {
     "somethingWrong": "משהו השתבש",
-    "unexpectedError": "אירעה שגיאה בלתי צפויה.",
+    "unexpectedError": "משהו השתבש אצלנו. נסו שוב בעוד רגע.",
     "tryAgain": "נסו שוב",
     "notFoundTitle": "404",
     "notFoundBody": "הדף לא קיים - או שהמיקום עדיין בבדיקה.",
@@ -533,5 +533,8 @@
     "restroom": "שירותים בקרבת מקום",
     "changingRoom": "חדר החלפה",
     "drone": "מתאים לדרון"
+  },
+  "Footer": {
+    "credit": "נוצר ע״י רחל לב עבור אקוורל"
   }
 }

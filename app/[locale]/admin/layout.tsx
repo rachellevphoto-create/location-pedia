@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { SiteNav } from "@/components/site-nav";
 import { prisma } from "@/lib/db";
 import { AdminNav } from "./admin-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 export default async function AdminLayout({
   children,
@@ -50,6 +51,7 @@ export default async function AdminLayout({
         </aside>
         <main className="flex-1 min-w-0">{children}</main>
       </div>
+      <SiteFooter />
     </div>
   );
 }

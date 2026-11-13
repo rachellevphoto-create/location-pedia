@@ -16,7 +16,7 @@
     "reject": "Reject",
     "ban": "Ban",
     "delete": "Delete",
-    "loading": "Loading...",
+    "loading": "Developing…",
     "tryAgain": "Try again",
     "openIn": "Open in",
     "view": "View",
@@ -102,7 +102,7 @@
     }
   },
   "Discover": {
-    "loadingMap": "Loading map...",
+    "loadingMap": "Unfolding the map…",
     "searchPlaceholder": "Search by name, city, or area...",
     "filterPriceAny": "Any price",
     "filterPricePaid": "Paid only",
@@ -119,9 +119,9 @@
     "viewSplit": "Split",
     "viewList": "List",
     "viewMap": "Map",
-    "loadingResults": "Loading...",
+    "loadingResults": "Scouting frames…",
     "resultsCount": "{count, plural, =0 {No locations} one {# location} other {# locations}}",
-    "emptyState": "No locations match your filters yet.",
+    "emptyState": "No spot matches all your filters. Try removing one, or move the map.",
     "viewLabel": "View",
     "removeFilter": "Remove {label}",
     "resizeMap": "Resize map. Drag, or use the arrow keys. Double-click to reset."
@@ -135,7 +135,7 @@
     "pickerHelp": "Click on the map to drop a pin, or drag the existing pin to fine-tune."
   },
   "Card": {
-    "noPhoto": "No photo yet",
+    "noPhoto": "Waiting for its first frame",
     "secret": "Premium",
     "paid": "Paid"
   },
@@ -186,7 +186,7 @@
     "no": "No"
   },
   "Gallery": {
-    "noPhotos": "No photos in this gallery yet.",
+    "noPhotos": "No shots here yet. Want to be the first?",
     "signInToVote": "Sign in to vote helpful.",
     "signInRequired": "Sign in required"
   },
@@ -197,7 +197,7 @@
     "posted": "Update posted",
     "pointsAwarded": "+10 points awarded.",
     "couldNotPost": "Could not post",
-    "noUpdates": "No updates yet. Be the first to post.",
+    "noUpdates": "All quiet. Been here lately? Tell us how it looks.",
     "verified": "Verified",
     "kind": {
       "BLOOM": "Bloom",
@@ -210,7 +210,7 @@
   },
   "Rating": {
     "yourRating": "Your rating & review",
-    "thanks": "Thanks!",
+    "thanks": "Thanks! You just helped the next photographer.",
     "ratedStars": "You rated {n} stars.",
     "couldNotSave": "Could not save rating",
     "needsApprovedAccount": "Sign in with an approved account to rate.",
@@ -222,7 +222,7 @@
     "updateReview": "Update review",
     "allReviews": "Reviews",
     "allReviewsCount": "Reviews ({count})",
-    "noReviews": "No reviews yet. Be the first.",
+    "noReviews": "No reviews yet. What did you think of it?",
     "yourReviewBadge": "Your review"
   },
   "Unlock": {
@@ -233,7 +233,7 @@
     "unlockedDescription": "Coordinates revealed.",
     "couldNotUnlock": "Could not unlock",
     "unlockFor": "Unlock for {cost} points",
-    "notEnoughPoints": "Not enough points"
+    "notEnoughPoints": "A few more points and it's yours"
   },
   "Submit": {
     "title": "Submit a location",
@@ -267,7 +267,7 @@
     "technicalLabel": "Technical / behind-the-scenes photos",
     "technicalHelper": "Wide shots of the actual terrain so others know what to expect.",
     "submitForReview": "Submit for review",
-    "submissionFailed": "Submission failed",
+    "submissionFailed": "Oops, that didn't go through",
     "tryAgain": "Try again",
 
     "validation": {
@@ -284,8 +284,8 @@
       "review": "Please review the form."
     },
 
-    "thanksTitle": "Submission received",
-    "thanksDescription": "Thanks for contributing to LocatePedia. An admin will review your submission shortly. You will be notified by email when it goes live.",
+    "thanksTitle": "Got it, thank you!",
+    "thanksDescription": "One more great spot on the map. We'll review it and email you as soon as it's live.",
     "thanksBackToDiscover": "Back to discover",
     "thanksSubmitAnother": "Submit another",
     "stepsLabel": "Steps",
@@ -299,7 +299,7 @@
     "addPhotos": "Add photos",
     "uploading": "Uploading...",
     "chooseFiles": "Choose files",
-    "uploadFailed": "Upload failed",
+    "uploadFailed": "That photo didn't upload. Try again?",
     "uploadFailedDescription": "Could not upload photo.",
     "removePhoto": "Remove photo",
     "uploadedPhotoAlt": "Uploaded photo"
@@ -312,7 +312,7 @@
     "submitOne": "Submit one",
     "recentPointsTitle": "Recent points",
     "recentPointsDescription": "Last 20 entries",
-    "noActivity": "No activity yet.",
+    "noActivity": "Nothing yet. The map is waiting.",
     "memberSince": "Member since {date}",
     "spotsCount": "{count, plural, one {# spot} other {# spots}}",
     "photosCount": "{count, plural, one {# photo} other {# photos}}",
@@ -462,7 +462,7 @@
   },
   "Errors": {
     "somethingWrong": "Something went wrong",
-    "unexpectedError": "An unexpected error occurred.",
+    "unexpectedError": "Something went wrong on our side. Try again in a moment.",
     "tryAgain": "Try again",
     "notFoundTitle": "404",
     "notFoundBody": "That page doesn't exist - or the location is still in review.",
@@ -533,5 +533,8 @@
     "restroom": "Restroom nearby",
     "changingRoom": "Changing room",
     "drone": "Drone-friendly"
+  },
+  "Footer": {
+    "credit": "Made by Rachel Lev for Aquarelle"
   }
 }

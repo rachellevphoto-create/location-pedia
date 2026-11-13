@@ -69,7 +69,7 @@ export function FavoriteButton({
         disabled={pending}
         aria-pressed={active}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-[color,background-color,transform] active:scale-95",
           active
             ? "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15"
             : "bg-background hover:bg-accent",
@@ -77,7 +77,8 @@ export function FavoriteButton({
         )}
       >
         <Heart
-          className={cn("h-4 w-4", active && "fill-primary text-primary")}
+          key={String(active)}
+          className={cn("h-4 w-4", active && "heart-pop fill-primary text-primary")}
         />
         <span>{localCount}</span>
       </button>
@@ -92,14 +93,15 @@ export function FavoriteButton({
       aria-pressed={active}
       aria-label={active ? "Remove from favorites" : "Add to favorites"}
       className={cn(
-        "inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-black/70",
+        "inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white shadow-sm backdrop-blur-sm transition-[color,background-color,transform] hover:scale-110 hover:bg-black/70 active:scale-90",
         className,
       )}
     >
       <Heart
+        key={String(active)}
         className={cn(
           "h-4 w-4 transition-transform",
-          active && "fill-primary text-primary",
+          active && "heart-pop fill-primary text-primary",
         )}
       />
     </button>

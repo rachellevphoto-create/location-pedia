@@ -29,6 +29,8 @@ type PersistentMapContextValue = {
   ) => () => void;
   updateSlotProps: (props: PersistentMapSlotProps) => void;
   registerHostResize: (fn: ResizeFn | null) => void;
+  /** Highlight one location's pin (e.g. while its card is hovered). */
+  setHighlight: (id: string | null) => void;
   subscribe: (listener: () => void) => () => void;
   getSnapshot: () => PersistentMapState;
   getServerSnapshot: () => PersistentMapState;
@@ -40,6 +42,8 @@ export type PersistentMapState = {
   items: DiscoverItem[];
   initial?: PersistentMapInitial;
   onMoveEnd?: (bbox: PersistentMapBbox) => void;
+  /** Location whose pin is highlighted, or null. */
+  highlightId: string | null;
 };
 
 const initialState: PersistentMapState = {
@@ -48,6 +52,7 @@ const initialState: PersistentMapState = {
   items: [],
   initial: undefined,
   onMoveEnd: undefined,
+  highlightId: null,
 };
 
 const PersistentMapContext =
@@ -62,6 +67,16 @@ export function usePersistentMapContext() {
   }
   return ctx;
 }
+
+/**
+ * Hover hook for cards: highlights the card's pin on the map. A no-op when
+ * there is no map provider (e.g. a card rendered outside the app layout).
+ */
+export function useMapHighlight() {
+  const ctx = React.useContext(PersistentMapContext);
+  return ctx?.setHighlight ?? noop;
+}
+function noop() {}
 
 export function usePersistentMapState(): PersistentMapState {
   const { subscribe, getSnapshot, getServerSnapshot } =
@@ -192,6 +207,13 @@ export function PersistentMapProvider({
     hostResizeRef.current = fn;
   }, []);
 
+  const setHighlight = React.useCallback(
+    (id: string | null) => {
+      if (stateRef.current.highlightId !== id) setState({ highlightId: id });
+    },
+    [setState],
+  );
+
   const subscribe = React.useCallback((listener: () => void) => {
     listenersRef.current.add(listener);
     return () => {
@@ -216,6 +238,7 @@ export function PersistentMapProvider({
       registerSlot,
       updateSlotProps,
       registerHostResize,
+      setHighlight,
       subscribe,
       getSnapshot,
       getServerSnapshot,
@@ -224,6 +247,7 @@ export function PersistentMapProvider({
       registerSlot,
       updateSlotProps,
       registerHostResize,
+      setHighlight,
       subscribe,
       getSnapshot,
       getServerSnapshot,

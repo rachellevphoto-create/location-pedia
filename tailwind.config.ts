@@ -16,6 +16,15 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        display: [
+          "var(--font-display-latin)",
+          "var(--font-display-he)",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
+        ],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
