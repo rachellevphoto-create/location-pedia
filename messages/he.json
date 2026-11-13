@@ -127,6 +127,7 @@
     "resizeMap": "שינוי גודל המפה. גררו, או השתמשו בחיצים. לחיצה כפולה לאיפוס."
   },
   "Map": {
+    "samePlaceCount": "{count, plural, one {מקום אחד} two {שני מקומות} other {# מקומות}} באותה נקודה",
     "tokenMissing": "הגדרו NEXT_PUBLIC_MAPBOX_TOKEN כדי להפעיל את המפה.",
     "tokenMissingHelp": "הגדרו את משתנה הסביבה NEXT_PUBLIC_MAPBOX_TOKEN כדי להציג את המפה האינטראקטיבית.",
     "manualHelp": "Mapbox לא מוגדר. הזינו קואורדינטות ידנית:",
